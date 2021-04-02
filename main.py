@@ -34,6 +34,21 @@ while running:
 
     pygame.display.update()
 
+# Board Object
+class Board:
+    def __init__(self, start, size):
+        self.maxHeight, self.maxWidth = start + size
+        self.minHeight, self.minWidth = start
+
+    def getMaxWidth(self):
+        return self.maxWidth
+    def getMaxHeight(self):
+        return self.maxHeight
+    def getMinWidth(self):
+        return self.minWidth
+    def getMinHeight(self):
+        return self.minHeight
+
 class Player:
     def __init__(self, life, speed):
         self.life = life
@@ -47,7 +62,16 @@ class Player:
         self.y += moveY
 
     # This allows it to create a path
-    def push(self):
+    def push(self, board):
+        if self.x == board.getMinWidth():
+            
+            
+        elif self.x == board.getMaxWidth():
+
+
+        elif self.y == board.getMinHeight():
+        
+        elif self.y == board.getMaxHeight():
 
 class Qix(Player):
     def __init__(self, life, speed, damage):
@@ -58,29 +82,29 @@ class Qix(Player):
         self.damage = damage
     
     # This one will move in a circle
-    def move(self, boardX, boardY):
+    def move(self, board):
         if self.direction == "Up:
-            if self.y += (10 * self.speed) >= boardY:
-                self.y = boardY
+            if self.y += (10 * self.speed) >= board.getMaxHeight():
+                self.y = board.getMaxHeight()
             else:
                 self.y += 10 * self.speed
         elif self.direction == "Down":
-            if self.y -= (10 * self.speed) <= 0:
-                self.y = 0
+            if self.y -= (10 * self.speed) <= board.getMinHeight():
+                self.y = board.getMinHeight()
             else:
                 self.y -= 10 * self.speed
         elif self.direction == "Left":
-            if self.x -= (10 * self.speed) <= 0:
-                self.x = 0
+            if self.x -= (10 * self.speed) <= board.getMinWidth():
+                self.x = board.getMinWidth()
             else:
                 self.x -= 10 * self.speed
         else:
-            if self.x += (10 * self.speed) >= boardX:
-                self.x = boardX
+            if self.x += (10 * self.speed) >= board.getMaxWidth():
+                self.x = board.getMaxWidth()
             else:
                 self.x += 10 * self.speed
 
-class Sparx(Qix):
+# Will fix this later
+'''class Sparx(Qix):
     # This one will be able to move on other lines, so overriding other method
-    def move(self):
-        
+    def move(self):'''
