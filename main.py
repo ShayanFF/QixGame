@@ -17,12 +17,16 @@ AQUA = (0, 255, 255)
 
 screen.fill(AQUA)
 """
-Experimenting with drawing lines to try and create the look of the board
-
-pygame.draw.line(screen, RED, (775, 25), (775, 575), 5)
-pygame.draw.line(screen, RED, (25, 25), (25, 575), 5)
-pygame.draw.line(screen, RED, (25, 780), (580, 780), 5)
-pygame.draw.line(screen, RED, (20, 20), (780, 20), 5)"""
+You can increment these with maxWidth and height to draw the original border
+Replace:
+775 with (maxHeight - 25)
+575 with (maxWidth - 25)
+and 25 should be able to stay the same although I haven't tested it yet
+"""
+pygame.draw.line(screen, RED, (775, 25), (775, 575), 1)
+pygame.draw.line(screen, RED, (25, 25), (25, 575), 1)
+pygame.draw.line(screen, RED, (25, 575), (775, 575), 1)
+pygame.draw.line(screen, RED, (25, 25), (775, 25), 1)
 
 running = True
 while running:
