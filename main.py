@@ -6,16 +6,18 @@ pygame.init()
 """Sets size of window, can be changed later"""
 screen = pygame.display.set_mode((800, 600))
 pygame.display.set_caption('Qix')
+clock = pygame.time.Clock()
 
 """Some placeholder colours to be used later"""
-BLACK = (0,   0,   0)
+BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
-RED = (255,   0,   0)
-GREEN = (0, 255,   0)
-BLUE = (0,   0, 255)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
 AQUA = (0, 255, 255)
 
 screen.fill(AQUA)
+
 """
 You can increment these with maxWidth and height to draw the original border
 Replace:
@@ -23,10 +25,25 @@ Replace:
 575 with (maxWidth - 25)
 and 25 should be able to stay the same although I haven't tested it yet
 """
+playerSurf = pygame.Surface((800, 600))
+playerSurf.fill(AQUA)
 pygame.draw.line(screen, RED, (775, 25), (775, 575), 1)
 pygame.draw.line(screen, RED, (25, 25), (25, 575), 1)
 pygame.draw.line(screen, RED, (25, 575), (775, 575), 1)
 pygame.draw.line(screen, RED, (25, 25), (775, 25), 1)
+pygame.draw.line(playerSurf, RED, (775, 25), (775, 575), 1)
+pygame.draw.line(playerSurf, RED, (25, 25), (25, 575), 1)
+pygame.draw.line(playerSurf, RED, (25, 575), (775, 575), 1)
+pygame.draw.line(playerSurf, RED, (25, 25), (775, 25), 1)
+pygame.draw.rect(screen, BLACK, (400, 570, 10, 10))
+x = 400
+y = 570
+speed = 5
+
+
+def player():
+    pygame.draw.rect(screen, BLACK, (x, y, 10, 10))
+
 
 running = True
 while running:
@@ -34,9 +51,26 @@ while running:
         if event.type == QUIT:
             running = False
             pygame.quit()
-            sys.exit()
+            exit()
 
+    keys = pygame.key.get_pressed()
+
+    if (keys[pygame.K_LEFT] or keys[pygame.K_a]) and x > 20:
+        x -= speed
+    elif (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and x < 770:
+        x += speed
+    elif (keys[pygame.K_UP] or keys[pygame.K_w]) and y > 20:
+        y -= speed
+    elif (keys[pygame.K_DOWN] or keys[pygame.K_s]) and y < 570:
+        y += speed
+
+    '''screen = pygame.Surface.copy(screen)'''
+    clock.tick(30)
+    screen.fill(AQUA)
+    screen.blit(playerSurf, (0, 0))
+    player()
     pygame.display.update()
+
 
 # Board Object
 class Board:
