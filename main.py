@@ -5,7 +5,7 @@ from pygame.locals import *
 pygame.init()
 
 """Sets size of window, can be changed later"""
-screen = pygame.display.set_mode((510, 510))
+screen = pygame.display.set_mode((800, 800))
 pygame.display.set_caption('Qix')
 clock = pygame.time.Clock()
 
@@ -94,8 +94,8 @@ class Player:
     def __init__(self, life, speed, board):
         self.life = life
         self.speed = speed
-        self.x = 100
-        self.y = 10
+        self.x = 250
+        self.y = 500
         self.location = board.curr
         self.atCorner = False
 
@@ -126,50 +126,50 @@ class Player:
                     self.x += self.speed
 
             elif direction == UP and (self.location.orientation == UP or self.location.orientation == DOWN):
-                if self.location.orientation == UP and self.y + self.speed >= self.location.next.y:
+                if self.location.orientation == UP and self.y - self.speed <= self.location.next.y:
                     self.y = self.location.next.y
                     self.atCorner = True
                 
-                elif self.location.orientation == DOWN and self.y + self.speed >= self.location.y:
+                elif self.location.orientation == DOWN and self.y - self.speed <= self.location.y:
                     self.y = self.location.y
-                    self.atCorner = True
-
-                else:
-                    self.y += self.speed
-
-            elif direction == DOWN and (self.location.orientation == UP or self.location.orientation == DOWN):
-                if self.location.orientation == UP and self.y - self.speed <= self.location.y:
-                    self.y = self.location.y
-                    self.atCorner = True
-                
-                elif self.location.orientation == DOWN and self.y - self.speed <= self.location.next.y:
-                    self.y = self.location.next.y
                     self.atCorner = True
 
                 else:
                     self.y -= self.speed
+
+            elif direction == DOWN and (self.location.orientation == UP or self.location.orientation == DOWN):
+                if self.location.orientation == UP and self.y + self.speed >= self.location.y:
+                    self.y = self.location.y
+                    self.atCorner = True
+                
+                elif self.location.orientation == DOWN and self.y + self.speed >= self.location.next.y:
+                    self.y = self.location.next.y
+                    self.atCorner = True
+
+                else:
+                    self.y += self.speed
         else:
             if direction == UP:
                 if self.location.next.x == self.x and self.location.next.orientation == UP:
                     self.location = self.location.next
                     board.curr = board.curr.next
-                    self.y += self.speed
+                    self.y -= self.speed
                     self.atCorner = False
                 elif self.location.prev.x == self.x and self.location.prev.orientation == DOWN:
                     self.location = self.location.prev
-                    self.y += self.speed
+                    self.y -= self.speed
                     board.curr = board.curr.prev
                     self.atCorner = False
 
             elif direction == DOWN:
                 if self.location.next.x == self.x and self.location.next.orientation == DOWN:
                     self.location = self.location.next
-                    self.y -= self.speed
+                    self.y += self.speed
                     board.curr = board.curr.next
                     self.atCorner = False
                 elif self.location.prev.x == self.x and self.location.prev.orientation == UP:
                     self.location = self.location.prev
-                    self.y -= self.speed
+                    self.y += self.speed
                     board.curr = board.curr.prev
                     self.atCorner = False
                 
@@ -232,18 +232,16 @@ def findAreaList(listNodes):
 
 class Board:  
     def __init__(self):    
-        startingNodes = [Node(10, 10, RIGHT), Node(500, 10, UP), Node(500, 500, LEFT), Node(10, 500, DOWN)]
+        startingNodes = [Node(10, 500, RIGHT), Node(500, 500, UP), Node(500, 10, LEFT), Node(10, 10, DOWN)]
+        startingNodes[0].prev = startingNodes[3]
+        startingNodes[1].prev = startingNodes[0]
+        startingNodes[2].prev = startingNodes[1]
+        startingNodes[3].prev = startingNodes[2]
+        startingNodes[0].next = startingNodes[1]
+        startingNodes[1].next = startingNodes[2]
+        startingNodes[2].next = startingNodes[3]
+        startingNodes[3].next = startingNodes[0]
         self.curr = startingNodes[0]
-        self.curr.prev = startingNodes[3]
-        self.curr.next = startingNodes[1]
-        self.curr = self.curr.next
-        for x in range(2):
-            self.curr.next = startingNodes[x + 1]
-            self.curr.prev = startingNodes[x - 1]
-            self.curr = self.curr.next
-        self.curr.prev = startingNodes[2]
-        self.curr.next = startingNodes[0]
-        self.curr = self.curr.next
         self.startingArea = self.getArea()
         
     def addPush(self, nodes):
@@ -321,5 +319,6 @@ while running:
     clock.tick(60)
     screen.fill(AQUA)
     screen.blit(playerSurf, (0, 0))
+    pygame.draw.rect(screen, BLACK, (player.x, player.y, 10, 10))
     pygame.display.update()
 
