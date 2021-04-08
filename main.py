@@ -160,6 +160,12 @@ class Player:
                     self.y -= self.speed
                     board.curr = board.curr.prev
                     self.atCorner = False
+                elif self.location.x == self.x and self.location.y == self.y and self.location.orientation == UP:
+                    self.y -= self.speed
+                    self.atCorner = False
+                elif self.location.next.x == self.x and self.location.next.y == self.y and self.location.orientation == DOWN:
+                    self.y -= self.speed
+                    self.atCorner = False
 
             elif direction == DOWN:
                 if self.location.next.x == self.x and self.location.next.orientation == DOWN:
@@ -171,6 +177,12 @@ class Player:
                     self.location = self.location.prev
                     self.y += self.speed
                     board.curr = board.curr.prev
+                    self.atCorner = False
+                elif self.location.x == self.x and self.location.y == self.y and self.location.orientation == DOWN:
+                    self.y += self.speed
+                    self.atCorner = False
+                elif self.location.next.x == self.x and self.location.next.y == self.y and self.location.orientation == UP:
+                    self.y += self.speed
                     self.atCorner = False
                 
             elif direction == LEFT:
@@ -184,6 +196,12 @@ class Player:
                     self.x -= self.speed
                     board.curr = board.curr.prev
                     self.atCorner = False
+                elif self.location.x == self.x and self.location.y == self.y and self.location.orientation == LEFT:
+                    self.x -= self.speed
+                    self.atCorner = False
+                elif self.location.next.x == self.x and self.location.next.y == self.y and self.location.orientation == RIGHT:
+                    self.x -= self.speed
+                    self.atCorner = False
 
             elif direction == RIGHT:
                 if self.location.next.y == self.y and self.location.next.orientation == RIGHT:
@@ -195,6 +213,12 @@ class Player:
                     self.location = self.location.prev
                     self.x += self.speed
                     board.curr = board.curr.prev
+                    self.atCorner = False
+                elif self.location.x == self.x and self.location.y == self.y and self.location.orientation == RIGHT:
+                    self.x += self.speed
+                    self.atCorner = False
+                elif self.location.next.x == self.x and self.location.next.y == self.y and self.location.orientation == LEFT:
+                    self.x += self.speed
                     self.atCorner = False
 
 class Node:    
