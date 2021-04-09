@@ -228,7 +228,16 @@ class Node:
         self.next = None
         self.prev = None
         self.orientation = orientation
+    
+    def getx(self):
+        return self.x
 
+    def gety(self):
+        return self.y
+
+    def getOrientation(self):
+        return self.orientation
+    
 def chkBtwn(node1, node2, node3):
     if node2.x == node1.x and node3.x == node2.x:
         if node2.y > node1.y:
