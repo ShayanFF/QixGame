@@ -52,12 +52,19 @@ class Player:
         self.speed = speed
         self.x = 250
         self.y = 500
+        self.rect = Rect(self.x, self.y, 10, 10)
+        self.rectInner = Rect(self.x, self.y, 1, 1)
         self.location = board.curr
         self.atCorner = False
         self.isPush = False
         self.pushNodes = []
+        self.immunity = 0
+        self.xPrev = self.x
+        self.yPrev = self.y
 
     def move(self, direction, board):
+        self.xPrev = self.x
+        self.yPrev = self.y
         if self.isPush is True:
             if self.pushNodes[-1].orientation == direction:
                 if direction == UP:
@@ -201,7 +208,14 @@ class Player:
                 elif self.location.next.x == self.x and self.location.next.y == self.y and self.location.orientation == LEFT:
                     self.x += self.speed
                     self.atCorner = False
+        self.moveHitbox()    
+    def moveHitbox(self):
+        self.rect.move_ip(self.x - self.xPrev, self.y - self.yPrev)
+        self.rectInner.move_ip(self.x - self.xPrev, self.y - self.yPrev)
 
+    def getHitbox(self):
+        return self.rect
+    
     def makePush(self):
         if self.isPush is not True:
             self.isPush = True
@@ -218,8 +232,74 @@ class Player:
                 self.pushNodes.append(Node(self.x, self.y, RIGHT))
                 self.x += self.speed
 
-    def resetPush(self):
+    def checkCollision(self, qix, sparxList, board):
+        if self.isPush is True:
+            if self.rect.colliderect(qixRect) is True:
+                self.resetPush(qix.getDamage())
+                return True
+            for i in sparxList:
+                if self.pushNodes[0].getx == i.getx and self.pushNodes[0].gety == i.gety:
+                    self.resetPush(i.getDamage())
+                    return True
+            for i in self.pushNodes:
+                if i.getHitbox() is not None and self.rect.colliderect(i.getHitbox()) is True:
+                    self.resetPush(0)
+                    return True
+            current = board.curr
+            firstNode = current
+            while current.next is not firstNode:
+                if self.rectInner.colliderect(current.getHitbox()) is True:
+                    board.addPush(self.pushNodes)
+                    self.location = board.curr
+                    self.pushNodes = []
+                current = current.next
+            if self.rectInner.colliderect(current.getHitbox()) is True:
+                    board.addPush(self.pushNodes)
+                    self.location = board.curr
+                    self.pushNodes = []
+            
+
+    def checkImmunity(self):
+        if self.immunity > 0:
+            self.immunity -= 1
+
+    def resetPush(self, damage):
+        self.x = self.pushNodes[0].getx
+        self.y = self.pushNodes[0].gety
+        self.life -= damage
         self.pushNodes = []
+        self.isPush = False
+        self.immunity = 300
+
+class Qix:
+    def __init__(self, speed, board, damage):
+        self.speed = speed
+        self.damage = damage
+        self.x = 250
+        self.y = 250
+        self.location = board.curr
+        self.rect = Rect(self.x, self.y, 10, 10)
+
+    def getHitbox(self):
+        return self.rect
+
+    def getDamage(self):
+        return self.damage
+
+class Sparx:
+    def __init__(self, speed, board, damage):
+        self.speed = speed
+        self.damage = damage
+        self.x = 250
+        self.y = 10
+        self.location = board.curr
+        self.rect = Rect(self.x, self.y, 10, 10)
+
+    def getHitbox(self):
+        return self.rect
+
+    def getDamage(self):
+        return self.damage
 
 class Node:    
     def __init__(self, x, y, orientation):
@@ -228,6 +308,7 @@ class Node:
         self.next = None
         self.prev = None
         self.orientation = orientation
+        self.rect = None
     
     def getx(self):
         return self.x
@@ -237,6 +318,16 @@ class Node:
 
     def getOrientation(self):
         return self.orientation
+
+    def getHitbox(self):
+        return self.rect
+    
+    def updateRect(self):
+        if self.next is not None:
+            if self.orientation == DOWN or self.orientation == RIGHT:
+                self.rect = Rect(self.x, self.y, self.next.x - self.x + 1, self.next.y - self.y + 1) 
+            else:
+                self.rect = Rect(self.next.x, self.next.y, self.x - self.next.x + 1, self.y - self.next.y + 1) 
 
 def chkBtwn(node1, node2, node3):
     if node2.x == node1.x and node3.x == node2.x:
@@ -274,6 +365,8 @@ class Board:
         startingNodes[1].next = startingNodes[2]
         startingNodes[2].next = startingNodes[3]
         startingNodes[3].next = startingNodes[0]
+        for i in startingNodes:
+            i.updateRect()
         self.curr = startingNodes[0]
         self.startingArea = self.getArea()
         
@@ -327,8 +420,24 @@ class Board:
         else:
             return False
 
+def drawObjects(board, player, qix, sparxLists):
+    current = board.curr
+    firstNode = current
+    while current.next is not firstNode:
+        if current.getHitbox() is not None:
+            pygame.draw.rect(screen, BLACK, current.getHitbox())
+            current = current.next
+    pygame.draw.rect(screen, BLACK, current.getHitbox())
+    pygame.draw.rect(screen, GREEN, player.getHitbox())
+    pygame.draw.rect(screen, RED, qix.getHitbox())
+    for i in sparxLists:
+        pygame.draw.rect(screen, BLACK, i.getHitbox())
+
 board = Board()
 player = Player(100, 10, board)
+qix = Qix(10, board, 1)
+sparx1 = Sparx(10, board, 1)
+sparxLists = [sparx1]
 while running:
     for event in pygame.event.get():
         if event.type == QUIT:
@@ -354,6 +463,6 @@ while running:
     clock.tick(60)
     screen.fill(AQUA)
     screen.blit(playerSurf, (0, 0))
-    pygame.draw.rect(screen, BLACK, (player.x, player.y, 10, 10))
+    drawObjects(board, player, qix, sparxLists)
     pygame.display.update()
 
