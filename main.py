@@ -5,7 +5,7 @@ from pygame.locals import *
 pygame.init()
 
 """Sets size of window, can be changed later"""
-screen = pygame.display.set_mode((800, 800))
+screen = pygame.display.set_mode((600, 600))
 pygame.display.set_caption('Qix')
 clock = pygame.time.Clock()
 
@@ -34,50 +34,6 @@ and 25 should be able to stay the same although I haven't tested it yet
 # pygame.draw.line(screen, RED, (25, 575), (775, 575), 1)
 # pygame.draw.line(screen, RED, (25, 25), (775, 25), 1)
 
-'''
-class Qix(Player):
-    def __init__(self, life, speed, damage):
-        super().__init__(life, speed)
-        self.x = 10
-        self.y = 10
-        self.damage = damage
-
-    # This one will move in a circle
-    #def move(self, board):   
-
-# Will fix this later
-
-class Sparx(Qix):
-    def __init__(self, life, speed, damage):
-        super().__init__(life, speed, damage)
-        # pos represents the item in the board coords list that the sparx is currently at
-        self.pos = 10
-        self.x = 0
-        self.y = 0
-
-    # This one will be able to move on other lines, so overriding other method
-    def move(self, board):
-        newpos = board.getCoord(self.pos)
-        self.x = newpos[0]
-        self.y = newpos[1]
-        # use ints if updating speed
-        if self.pos + self.speed < len(board.boarder):
-            self.pos += self.speed
-        else:
-            self.pos = 0
-
-    def draw(self):
-        # draw a diamond at the sparx location
-        points = [(self.x + 5, self.y), (self.x, self.y + 5), (self.x - 5, self.y), (self.x, self.y - 5)]
-        pygame.draw.polygon(screen, BLUE, points, 0)
-        pygame.draw.polygon(playerSurf, GREEN, points, 1)
-
-
-# initialize board object
-board = Board(5, 500)
-# initialize sparx object
-sparx = Sparx(4, 1, 1)'''
-
 pygame.draw.rect(screen, BLACK, (255, 505, 10, 10))
 x = 255
 y = 505
@@ -98,9 +54,34 @@ class Player:
         self.y = 500
         self.location = board.curr
         self.atCorner = False
+        self.isPush = False
+        self.pushNodes = []
 
     def move(self, direction, board):
-        if self.atCorner is False:
+        if self.isPush is True:
+            if self.pushNodes[-1].orientation == direction:
+                if direction == UP:
+                    self.y -= self.speed
+                elif direction == DOWN:
+                    self.y += self.speed
+                elif direction == LEFT:
+                    self.x -= self.speed
+                elif direction == RIGHT:
+                    self.x += self.speed
+            elif self.pushNodes[-1].orientation != direction * -1:
+                if direction == RIGHT:
+                    self.pushNodes.append(Node(self.x, self.y, RIGHT))
+                    self.x += self.speed
+                elif direction == LEFT:
+                    self.pushNodes.append(Node(self.x, self.y, LEFT))
+                    self.x -= self.speed
+                elif direction == UP:
+                    self.pushNodes.append(Node(self.x, self.y, UP))
+                    self.y -= self.speed
+                elif direction == DOWN:
+                    self.pushNodes.append(Node(self.x, self.y, DOWN))
+                    self.y += self.speed
+        elif self.atCorner is False:
             if direction == LEFT and (self.location.orientation == LEFT or self.location.orientation == RIGHT):
                 if self.location.orientation == LEFT and self.x - self.speed <= self.location.next.x:
                     self.x = self.location.next.x
@@ -221,6 +202,25 @@ class Player:
                     self.x += self.speed
                     self.atCorner = False
 
+    def makePush(self):
+        if self.isPush is not True:
+            self.isPush = True
+            if self.location.orientation == RIGHT:
+                self.pushNodes.append(Node(self.x, self.y, UP))
+                self.y -= self.speed
+            elif self.location.orientation == LEFT:
+                self.pushNodes.append(Node(self.x, self.y, DOWN))
+                self.y += self.speed
+            elif self.location.orientation == UP:
+                self.pushNodes.append(Node(self.x, self.y, LEFT))
+                self.x -= self.speed
+            elif self.location.orientation == DOWN:
+                self.pushNodes.append(Node(self.x, self.y, RIGHT))
+                self.x += self.speed
+
+    def resetPush(self):
+        self.pushNodes = []
+
 class Node:    
     def __init__(self, x, y, orientation):
         self.x = x
@@ -237,7 +237,7 @@ class Node:
 
     def getOrientation(self):
         return self.orientation
-    
+
 def chkBtwn(node1, node2, node3):
     if node2.x == node1.x and node3.x == node2.x:
         if node2.y > node1.y:
@@ -285,7 +285,7 @@ class Board:
             current = current.next
             tempList.append(current)
         tempList.extend(reversedNodes)
-        if findAreaList(tempList) <= self.getArea():
+        if findAreaList(tempList) <= self.getArea() / 2:
             self.curr.next = nodes[0]
             for x in range(1, len(nodes) - 1):
                 nodes[x].prev = nodes[x-1]
@@ -347,6 +347,8 @@ while running:
         player.move(UP, board)
     elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
         player.move(DOWN, board)
+    elif keys[pygame.K_SPACE]:
+        player.makePush()
 
     '''screen = pygame.Surface.copy(screen)'''
     clock.tick(60)
