@@ -46,25 +46,27 @@ DOWN = -1
 LEFT = 2
 RIGHT = -2
 
+FAIL = 0
+PASS = 1
+NONE = 2
+QIX = 3
+SPARX = 4
+
 class Player:
     def __init__(self, life, speed, board):
         self.life = life
         self.speed = speed
         self.x = 250
         self.y = 500
-        self.rect = Rect(self.x, self.y, 10, 10)
-        self.rectInner = Rect(self.x, self.y, 1, 1)
+        self.rect = pygame.Rect(self.x, self.y, 10, 10)
+        self.rect.center = (self.x, self.y)
         self.location = board.curr
         self.atCorner = False
         self.isPush = False
         self.pushNodes = []
         self.immunity = 0
-        self.xPrev = self.x
-        self.yPrev = self.y
 
     def move(self, direction, board):
-        self.xPrev = self.x
-        self.yPrev = self.y
         if self.isPush is True:
             if self.pushNodes[-1].orientation == direction:
                 if direction == UP:
@@ -88,28 +90,26 @@ class Player:
                 elif direction == DOWN:
                     self.pushNodes.append(Node(self.x, self.y, DOWN))
                     self.y += self.speed
+                self.pushNodes[-1].prev = self.pushNodes[-2]
+                self.pushNodes[-2].next = self.pushNodes[-1]
+                self.pushNodes[-2].updateRect()
         elif self.atCorner is False:
             if direction == LEFT and (self.location.orientation == LEFT or self.location.orientation == RIGHT):
                 if self.location.orientation == LEFT and self.x - self.speed <= self.location.next.x:
                     self.x = self.location.next.x
                     self.atCorner = True
-                
                 elif self.location.orientation == RIGHT and self.x - self.speed <= self.location.x:
                     self.x = self.location.x
                     self.atCorner = True
-
                 else:
                     self.x -= self.speed
-
             elif direction == RIGHT and (self.location.orientation == LEFT or self.location.orientation == RIGHT):
                 if self.location.orientation == LEFT and self.x + self.speed >= self.location.x:
                     self.x = self.location.x
                     self.atCorner = True
-                
                 elif self.location.orientation == RIGHT and self.x + self.speed >= self.location.next.x:
                     self.x = self.location.next.x
                     self.atCorner = True
-
                 else:
                     self.x += self.speed
 
@@ -210,14 +210,15 @@ class Player:
                     self.atCorner = False
         self.moveHitbox()    
     def moveHitbox(self):
-        self.rect.move_ip(self.x - self.xPrev, self.y - self.yPrev)
-        self.rectInner.move_ip(self.x - self.xPrev, self.y - self.yPrev)
+        self.rect.x = self.x
+        self.rect.y = self.y
+        self.rect.center = (self.x, self.y)
 
     def getHitbox(self):
         return self.rect
     
     def makePush(self):
-        if self.isPush is not True:
+        if self.isPush is not True and self.atCorner is not True:
             self.isPush = True
             if self.location.orientation == RIGHT:
                 self.pushNodes.append(Node(self.x, self.y, UP))
@@ -231,44 +232,50 @@ class Player:
             elif self.location.orientation == DOWN:
                 self.pushNodes.append(Node(self.x, self.y, RIGHT))
                 self.x += self.speed
+            self.moveHitbox()
+
+    def endPush(self):
+        self.isPush = False
+        self.pushNodes = []
 
     def checkCollision(self, qix, sparxList, board):
-        if self.isPush is True:
-            if self.rect.colliderect(qixRect) is True:
-                self.resetPush(qix.getDamage())
-                return True
-            for i in sparxList:
-                if self.pushNodes[0].getx == i.getx and self.pushNodes[0].gety == i.gety:
-                    self.resetPush(i.getDamage())
-                    return True
-            for i in self.pushNodes:
-                if i.getHitbox() is not None and self.rect.colliderect(i.getHitbox()) is True:
-                    self.resetPush(0)
-                    return True
-            current = board.curr
-            firstNode = current
-            while current.next is not firstNode:
-                if self.rectInner.colliderect(current.getHitbox()) is True:
-                    board.addPush(self.pushNodes)
-                    self.location = board.curr
-                    self.pushNodes = []
-                current = current.next
-            if self.rectInner.colliderect(current.getHitbox()) is True:
-                    board.addPush(self.pushNodes)
-                    self.location = board.curr
-                    self.pushNodes = []
-            
+        if self.rect.colliderect(qix.rect):
+                return QIX
+        for i in sparxList:
+            if self.pushNodes[0].getx == i.x and self.pushNodes[0].gety == i.y:
+                return SPARX
+        for i in self.pushNodes:
+            if i.rect is not None and i.rect.collidepoint(self.rect.center):
+                return FAIL
+        current = board.curr
+        firstNode = current
+        while current.next is not firstNode:
+            if current.rect.collidepoint(self.rect.center):
+                self.pushNodes.append(Node(self.x, self.y, current.getOrientation()))
+                board.addPush(self.pushNodes, current)
+                self.location = board.curr
+                self.atCorner = True
+                return PASS
+            current = current.next
+            if current.rect.collidepoint(self.rect.center):
+                self.pushNodes.append(Node(self.x, self.y, current.getOrientation()))
+                board.addPush(self.pushNodes, current)
+                self.location = board.curr
+                self.atCorner = True
+                return PASS
+        return NONE
 
     def checkImmunity(self):
         if self.immunity > 0:
             self.immunity -= 1
 
     def resetPush(self, damage):
-        self.x = self.pushNodes[0].getx
-        self.y = self.pushNodes[0].gety
-        self.life -= damage
-        self.pushNodes = []
+        self.x = self.pushNodes[0].getx()
+        self.y = self.pushNodes[0].gety()
+        self.moveHitbox()
         self.isPush = False
+        self.pushNodes = []
+        self.life -= damage
         self.immunity = 300
 
 class Qix:
@@ -278,7 +285,8 @@ class Qix:
         self.x = 250
         self.y = 250
         self.location = board.curr
-        self.rect = Rect(self.x, self.y, 10, 10)
+        self.rect = pygame.Rect(self.x, self.y, 10, 10)
+        self.rect.center = (self.x, self.y)
 
     def getHitbox(self):
         return self.rect
@@ -293,7 +301,8 @@ class Sparx:
         self.x = 250
         self.y = 10
         self.location = board.curr
-        self.rect = Rect(self.x, self.y, 10, 10)
+        self.rect = pygame.Rect(self.x, self.y, 10, 10)
+        self.rect.center = (self.x, self.y)
 
     def getHitbox(self):
         return self.rect
@@ -325,30 +334,13 @@ class Node:
     def updateRect(self):
         if self.next is not None:
             if self.orientation == DOWN or self.orientation == RIGHT:
-                self.rect = Rect(self.x, self.y, self.next.x - self.x + 1, self.next.y - self.y + 1) 
+                self.rect = pygame.Rect(self.x, self.y, self.next.x - self.x + 1, self.next.y - self.y + 1) 
             else:
-                self.rect = Rect(self.next.x, self.next.y, self.x - self.next.x + 1, self.y - self.next.y + 1) 
-
-def chkBtwn(node1, node2, node3):
-    if node2.x == node1.x and node3.x == node2.x:
-        if node2.y > node1.y:
-            if node3.y >= node1.y and node3.y < node2.y:
-                return True
-        if node2.y < node1.y:
-            if node3.y > node2.y and node3.y <= node1.y:
-                return True
-
-    if node2.y == node1.y and node3.y == node2.y:
-        if node2.x > node1.x:
-            if node3.x >= node1.x and node3.x < node2.x:
-                return True
-        if node2.x < node1.x:
-            if node3.x > node2.x and node3.x <= node1.x:
-                return True
-    return False
+                self.rect = pygame.Rect(self.next.x, self.next.y, self.x - self.next.x + 1, self.y - self.next.y + 1) 
 
 def findAreaList(listNodes):
-    sum1, sum2 = 0
+    sum1 = 0
+    sum2 = 0
     for i in range(len(listNodes) - 1):
         sum1 += listNodes[i].x * listNodes[i + 1].y
         sum2 += listNodes[i].y * listNodes[i + 1].x
@@ -357,49 +349,55 @@ def findAreaList(listNodes):
 class Board:  
     def __init__(self):    
         startingNodes = [Node(10, 500, RIGHT), Node(500, 500, UP), Node(500, 10, LEFT), Node(10, 10, DOWN)]
-        startingNodes[0].prev = startingNodes[3]
-        startingNodes[1].prev = startingNodes[0]
-        startingNodes[2].prev = startingNodes[1]
-        startingNodes[3].prev = startingNodes[2]
+        startingNodes[0].prev = startingNodes[-1]
+        startingNodes[-1].prev = startingNodes[-2]
         startingNodes[0].next = startingNodes[1]
-        startingNodes[1].next = startingNodes[2]
-        startingNodes[2].next = startingNodes[3]
-        startingNodes[3].next = startingNodes[0]
-        for i in startingNodes:
-            i.updateRect()
+        startingNodes[-1].next = startingNodes[0]
+        for x in range(1, len(startingNodes)-1):
+            startingNodes[x].prev = startingNodes[x-1]
+            startingNodes[x].next = startingNodes[x+1]
         self.curr = startingNodes[0]
         self.startingArea = self.getArea()
         
-    def addPush(self, nodes):
-        reversedNodes = nodes.reverse()
+    def addPush(self, nodes, nodeBefore):
+        nodes.reverse
         current = self.curr
-        tempList = [nodes[0]]
-        while chkBtwn(current, current.next, nodes[-1]) is not True:
+        tempList = []
+        tempList.append(nodes[0])
+        while current is not nodeBefore:
             current = current.next
             tempList.append(current)
-        tempList.extend(reversedNodes)
-        if findAreaList(tempList) <= self.getArea() / 2:
-            self.curr.next = nodes[0]
-            for x in range(1, len(nodes) - 1):
-                nodes[x].prev = nodes[x-1]
-                nodes[x].next = nodes[x+1]
+        nodes.reverse()
+        tempList.extend(nodes)
+        nodes.reverse()
+        if findAreaList(tempList) >= self.getArea() / 2:
+            nodes[0].prev = self.curr
+            nodes[-2].next = nodes[-1]
             nodes[-1].prev = nodes[-2]
-            nodes[-1].next = current.next
-            while self.curr is not nodes[-1]:
-                self.curr = self.curr.next
+            nodes[-1].next = nodeBefore.next
+            nodes[-1].next.prev = nodes[-1]
+            self.curr.next = nodes[0]
+            self.curr = nodes[-1]
+        # Does not work atm
+        '''
         else:
             for x in nodes:
                 x.orientation *= -1
-            self.curr.next.prev = nodes[0]
+            nodes[0].next = self.curr
+            nodes[0].prev = nodes[1]
+            nodes[0].updateRect()
+            self.curr.prev = nodes[0]
             current.next = nodes[-1]
             for x in range(1, len(nodes) - 1):
                 nodes[x].prev = nodes[x+1]
                 nodes[x].next = nodes[x-1]
+                nodes[x].updateRect()
+            current.next = nodes[-1]
+            current.updateRect()
             nodes[-1].prev = current
             nodes[-1].next = nodes[-2]
-            while self.curr is not nodes[-1]:
-                self.curr = self.curr.next
-
+            nodes[-1].updateRect()
+            self.curr = nodes[-1]'''
     def getArea(self):
         current = self.curr
         firstNode = current
@@ -420,24 +418,36 @@ class Board:
         else:
             return False
 
-def drawObjects(board, player, qix, sparxLists):
+def drawBoard(board):
     current = board.curr
     firstNode = current
     while current.next is not firstNode:
-        if current.getHitbox() is not None:
-            pygame.draw.rect(screen, BLACK, current.getHitbox())
-            current = current.next
-    pygame.draw.rect(screen, BLACK, current.getHitbox())
-    pygame.draw.rect(screen, GREEN, player.getHitbox())
-    pygame.draw.rect(screen, RED, qix.getHitbox())
+        current.updateRect()
+        pygame.draw.rect(screen, BLACK, current.rect)
+        current = current.next
+    current.updateRect()
+    pygame.draw.rect(screen, BLACK, current.rect)
+
+def drawObjects(player, qix, sparxLists):
+    pygame.draw.rect(screen, GREEN, player.rect)
+    pygame.draw.rect(screen, RED, qix.rect)
     for i in sparxLists:
-        pygame.draw.rect(screen, BLACK, i.getHitbox())
+        pygame.draw.rect(screen, BLACK, i.rect)
+
+def drawPush(player):
+    for i in player.pushNodes:
+        if i.getHitbox() is not None:
+            pygame.draw.rect(screen, BLACK, i.rect)
+        elif i.getOrientation() == DOWN or i.getOrientation() == RIGHT:
+            pygame.draw.rect(screen, BLACK, (i.getx(), i.gety(), player.x - i.getx() + 1, player.y - i.gety() + 1))
+        else:
+            pygame.draw.rect(screen, BLACK, (player.x, player.y, i.getx() - player.x + 1, i.gety() - player.y + 1))
 
 board = Board()
-player = Player(100, 10, board)
 qix = Qix(10, board, 1)
 sparx1 = Sparx(10, board, 1)
-sparxLists = [sparx1]
+sparxList = [sparx1]
+player = Player(100, 10, board)
 while running:
     for event in pygame.event.get():
         if event.type == QUIT:
@@ -460,9 +470,24 @@ while running:
         player.makePush()
 
     '''screen = pygame.Surface.copy(screen)'''
-    clock.tick(60)
+    clock.tick(10)
     screen.fill(AQUA)
     screen.blit(playerSurf, (0, 0))
-    drawObjects(board, player, qix, sparxLists)
+    drawBoard(board)
+    drawObjects(player, qix, sparxList)
+    if player.isPush is True:
+        drawPush(player)
+        check = player.checkCollision(qix, sparxList, board)
+        if check != NONE:
+            screen.fill(AQUA)
+            if check == PASS:
+                player.endPush()
+            elif check == QIX:
+                player.resetPush(qix.getDamage())
+            elif check == SPARX:
+                player.resetPush(sparx.getDamage())
+            elif check == FAIL:
+                player.resetPush(0)
+            
     pygame.display.update()
 
