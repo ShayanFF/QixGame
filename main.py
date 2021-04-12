@@ -251,7 +251,7 @@ class Player:
         if self.rect.colliderect(qix.rect):
             return QIX
         for i in sparxList:
-            if self.pushNodes[0].getx == i.x and self.pushNodes[0].gety == i.y:
+            if self.pushNodes[0].x == i.x and self.pushNodes[0].y == i.y:
                 return SPARX
         for i in self.pushNodes:
             if i.rect is not None and i.rect.collidepoint(self.rect.center):
@@ -337,7 +337,7 @@ class Sparx:
         self.damage = damage
         self.x = 250
         self.y = 10
-        self.location = board.curr
+        self.location = board.curr.next.next
         self.rect = pygame.Rect(self.x, self.y, 10, 10)
         self.rect.center = (self.x, self.y)
 
@@ -346,6 +346,24 @@ class Sparx:
 
     def getDamage(self):
         return self.damage
+
+    def moveHitbox(self):
+        self.rect.x = self.x
+        self.rect.y = self.y
+        self.rect.center = (self.x, self.y)
+
+    def moveCircle(self):
+        if self.x == self.location.next.x and self.y == self.location.next.y:
+            self.location = self.location.next
+        if self.location.orientation == UP:
+            self.y -= self.speed
+        elif self.location.orientation == DOWN:
+            self.y += self.speed 
+        elif self.location.orientation == LEFT:
+            self.x -= self.speed
+        elif self.location.orientation == RIGHT:
+            self.x += self.speed 
+        self.moveHitbox()
 
 
 class Node:
@@ -400,7 +418,7 @@ class Board:
         self.startingArea = self.getArea()
 
     def addPush(self, nodes, nodeBefore):
-        nodes.reverse
+        nodes.reverse()
         current = self.curr
         tempList = []
         tempList.append(nodes[0])
@@ -409,35 +427,38 @@ class Board:
             tempList.append(current)
         nodes.reverse()
         tempList.extend(nodes)
-        nodes.reverse()
-        if findAreaList(tempList) >= self.getArea() / 2:
+        sameLineBefore = False
+        if self.curr is nodeBefore:
+            if self.curr.orientation == RIGHT and nodes[-1].x < nodes[0].x:
+                sameLineBefore = True
+            elif self.curr.orientation == LEFT and nodes[-1].x > nodes[0].x:
+                sameLineBefore = True
+            elif self.curr.orientation == UP and nodes[-1].y > nodes[0].y:
+                sameLineBefore = True
+            elif self.curr.orientation == DOWN and nodes[-1].y < nodes[0].y:
+                sameLineBefore = True
+
+        if findAreaList(tempList) >= self.getArea() / 2 and sameLineBefore is not True:
             nodes[0].prev = self.curr
             nodes[-2].next = nodes[-1]
             nodes[-1].prev = nodes[-2]
-            nodes[-1].next = nodeBefore.next
+            nodes[-1].next = current.next
             nodes[-1].next.prev = nodes[-1]
             self.curr.next = nodes[0]
             self.curr = nodes[-1]
-        # Does not work atm
-        '''
         else:
-            for x in nodes:
-                x.orientation *= -1
-            nodes[0].next = self.curr
+            for x in range(len(nodes)-1,0,-1):
+                nodes[x].orientation = nodes[x-1].orientation * -1
+            nodes[0].orientation = self.curr.orientation
+            nodes[0].next = self.curr.next
             nodes[0].prev = nodes[1]
-            nodes[0].updateRect()
-            self.curr.prev = nodes[0]
-            current.next = nodes[-1]
             for x in range(1, len(nodes) - 1):
                 nodes[x].prev = nodes[x+1]
                 nodes[x].next = nodes[x-1]
-                nodes[x].updateRect()
             current.next = nodes[-1]
-            current.updateRect()
             nodes[-1].prev = current
             nodes[-1].next = nodes[-2]
-            nodes[-1].updateRect()
-            self.curr = nodes[-1]'''
+            self.curr = nodes[-1]
 
     def getArea(self):
         current = self.curr
@@ -552,7 +573,6 @@ def drawPush(player):
         else:
             pygame.draw.rect(screen, BLACK, (player.x, player.y, i.getx() - player.x + 1, i.gety() - player.y + 1))
 
-
 def dupeDrawPush(player):
     for i in player.pushNodes:
         if i.getHitbox() is not None:
@@ -563,10 +583,10 @@ def dupeDrawPush(player):
             pygame.draw.rect(playerSurf, BLACK, (player.x, player.y, i.getx() - player.x + 1, i.gety() - player.y + 1))
 
 board = Board()
-qix = Qix(10, board, 1)
-sparx1 = Sparx(10, board, 1)
+qix = Qix(5, board, 1)
+sparx1 = Sparx(5, board, 1)
 sparxList = [sparx1]
-player = Player(100, 10, board)
+player = Player(10, 5, board)
 while running:
     for event in pygame.event.get():
         if event.type == QUIT:
@@ -589,7 +609,7 @@ while running:
         player.makePush()
 
     '''screen = pygame.Surface.copy(screen)'''
-    clock.tick(10)
+    clock.tick(40)
     qix.move()
     screen.fill(AQUA)
     screen.blit(playerSurf, (0, 0))
@@ -615,8 +635,9 @@ while running:
             elif check == QIX:
                 player.resetPush(qix.getDamage())
             elif check == SPARX:
-                player.resetPush(sparx.getDamage())
+                player.resetPush(sparx1.getDamage())
             elif check == FAIL:
                 player.resetPush(0)
-
+    sparx1.moveCircle()
+    drawObjects(player, qix, sparxList)
     pygame.display.update()
