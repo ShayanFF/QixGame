@@ -6,9 +6,11 @@ pygame.init()
 
 """Sets size of window, can be changed later"""
 screen = pygame.display.set_mode((510, 575))
+temp = 1
 pygame.display.set_caption('Qix')
 clock = pygame.time.Clock()
 font = pygame.font.SysFont('arial', 20)
+
 
 """Some placeholder colours to be used later"""
 BLACK = (0, 0, 0)
@@ -36,10 +38,6 @@ and 25 should be able to stay the same although I haven't tested it yet
 """
 
 
-# pygame.draw.line(screen, RED, (775, 25), (775, 575), 1)
-# pygame.draw.line(screen, RED, (25, 25), (25, 575), 1)
-# pygame.draw.line(screen, RED, (25, 575), (775, 575), 1)
-# pygame.draw.line(screen, RED, (25, 25), (775, 25), 1)
 
 pygame.draw.rect(screen, BLACK, (255, 505, 10, 10))
 x = 255
@@ -58,6 +56,7 @@ PASS = 1
 NONE = 2
 QIX = 3
 SPARX = 4
+
 
 class Player:
     def __init__(self, life, speed, board):
@@ -124,7 +123,7 @@ class Player:
                 if self.location.orientation == UP and self.y - self.speed <= self.location.next.y:
                     self.y = self.location.next.y
                     self.atCorner = True
-                
+
                 elif self.location.orientation == DOWN and self.y - self.speed <= self.location.y:
                     self.y = self.location.y
                     self.atCorner = True
@@ -136,7 +135,7 @@ class Player:
                 if self.location.orientation == UP and self.y + self.speed >= self.location.y:
                     self.y = self.location.y
                     self.atCorner = True
-                
+
                 elif self.location.orientation == DOWN and self.y + self.speed >= self.location.next.y:
                     self.y = self.location.next.y
                     self.atCorner = True
@@ -179,7 +178,7 @@ class Player:
                 elif self.location.next.x == self.x and self.location.next.y == self.y and self.location.orientation == UP:
                     self.y += self.speed
                     self.atCorner = False
-                
+
             elif direction == LEFT:
                 if self.location.next.y == self.y and self.location.next.orientation == LEFT:
                     self.location = self.location.next
@@ -215,7 +214,8 @@ class Player:
                 elif self.location.next.x == self.x and self.location.next.y == self.y and self.location.orientation == LEFT:
                     self.x += self.speed
                     self.atCorner = False
-        self.moveHitbox()    
+        self.moveHitbox()
+
     def moveHitbox(self):
         self.rect.x = self.x
         self.rect.y = self.y
@@ -223,7 +223,7 @@ class Player:
 
     def getHitbox(self):
         return self.rect
-    
+
     def makePush(self):
         if self.isPush is not True and self.atCorner is not True:
             self.isPush = True
@@ -243,11 +243,12 @@ class Player:
 
     def endPush(self):
         self.isPush = False
+        board.fillArea(self.pushNodes)
         self.pushNodes = []
 
     def checkCollision(self, qix, sparxList, board):
         if self.rect.colliderect(qix.rect):
-                return QIX
+            return QIX
         for i in sparxList:
             if self.pushNodes[0].getx == i.x and self.pushNodes[0].gety == i.y:
                 return SPARX
@@ -285,6 +286,7 @@ class Player:
         self.life -= damage
         self.immunity = 300
 
+
 class Qix:
     def __init__(self, speed, board, damage):
         self.speed = speed
@@ -300,6 +302,7 @@ class Qix:
 
     def getDamage(self):
         return self.damage
+
 
 class Sparx:
     def __init__(self, speed, board, damage):
@@ -317,7 +320,8 @@ class Sparx:
     def getDamage(self):
         return self.damage
 
-class Node:    
+
+class Node:
     def __init__(self, x, y, orientation):
         self.x = x
         self.y = y
@@ -325,7 +329,7 @@ class Node:
         self.prev = None
         self.orientation = orientation
         self.rect = None
-    
+
     def getx(self):
         return self.x
 
@@ -337,13 +341,14 @@ class Node:
 
     def getHitbox(self):
         return self.rect
-    
+
     def updateRect(self):
         if self.next is not None:
             if self.orientation == DOWN or self.orientation == RIGHT:
-                self.rect = pygame.Rect(self.x, self.y, self.next.x - self.x + 1, self.next.y - self.y + 1) 
+                self.rect = pygame.Rect(self.x, self.y, self.next.x - self.x + 1, self.next.y - self.y + 1)
             else:
-                self.rect = pygame.Rect(self.next.x, self.next.y, self.x - self.next.x + 1, self.y - self.next.y + 1) 
+                self.rect = pygame.Rect(self.next.x, self.next.y, self.x - self.next.x + 1, self.y - self.next.y + 1)
+
 
 def findAreaList(listNodes):
     sum1 = 0
@@ -353,19 +358,20 @@ def findAreaList(listNodes):
         sum2 += listNodes[i].y * listNodes[i + 1].x
     return (sum1 - sum2) / 2
 
-class Board:  
-    def __init__(self):    
+
+class Board:
+    def __init__(self):
         startingNodes = [Node(10, 500, RIGHT), Node(500, 500, UP), Node(500, 10, LEFT), Node(10, 10, DOWN)]
         startingNodes[0].prev = startingNodes[-1]
         startingNodes[-1].prev = startingNodes[-2]
         startingNodes[0].next = startingNodes[1]
         startingNodes[-1].next = startingNodes[0]
-        for x in range(1, len(startingNodes)-1):
-            startingNodes[x].prev = startingNodes[x-1]
-            startingNodes[x].next = startingNodes[x+1]
+        for x in range(1, len(startingNodes) - 1):
+            startingNodes[x].prev = startingNodes[x - 1]
+            startingNodes[x].next = startingNodes[x + 1]
         self.curr = startingNodes[0]
         self.startingArea = self.getArea()
-        
+
     def addPush(self, nodes, nodeBefore):
         nodes.reverse
         current = self.curr
@@ -405,6 +411,7 @@ class Board:
             nodes[-1].next = nodes[-2]
             nodes[-1].updateRect()
             self.curr = nodes[-1]'''
+
     def getArea(self):
         current = self.curr
         firstNode = current
@@ -424,6 +431,63 @@ class Board:
             return True
         else:
             return False
+    def getPoint(self, nodes):
+        point = (0,0)
+        for i in range(0, len(nodes)-1):
+            if nodes[i].getOrientation() != nodes[i + 1].getOrientation():
+                if nodes[i].getOrientation() == UP:
+                    if nodes[i+1].getOrientation() == LEFT:
+                        point = (nodes[i+1].getx() - 1, nodes[i+1].gety() + 1)
+                        return point
+                    elif nodes[i+1].getOrientation() == RIGHT:
+                        point = (nodes[i + 1].getx() + 1, nodes[i + 1].gety() + 1)
+                        return point
+                elif nodes[i].getOrientation() == DOWN:
+                    if nodes[i+1].getOrientation() == LEFT:
+                        point = (nodes[i + 1].getx() - 1, nodes[i + 1].gety() - 1)
+                        return point
+                    elif nodes[i+1].getOrientation() == RIGHT:
+                        point = (nodes[i + 1].getx() + 1, nodes[i + 1].gety() - 1)
+                        return point
+                elif nodes[i].getOrientation() == LEFT:
+                    if nodes[i+1].getOrientation() == UP:
+                        point = (nodes[i + 1].getx() + 1, nodes[i + 1].gety() - 1)
+                        return point
+                    elif nodes[i+1].getOrientation() == DOWN:
+                        point = (nodes[i + 1].getx() + 1, nodes[i + 1].gety() + 1)
+                        return point
+                elif nodes[i].getOrientation() == RIGHT:
+                    if nodes[i+1].getOrientation() == UP:
+                        point = (nodes[i + 1].getx() - 1, nodes[i + 1].gety() - 1)
+                        return point
+                    elif nodes[i+1].getOrientation() == DOWN:
+                        point = (nodes[i + 1].getx() - 1, nodes[i + 1].gety() + 1)
+                        return point
+        return None
+
+    def fillArea(self, nodes):
+        area = []
+        startPoint = self.getPoint(nodes)
+        if startPoint is not None:
+            print(startPoint)
+            surfArray = pygame.surfarray.pixels2d(playerSurf)
+            currentColour = surfArray[startPoint]
+            print(currentColour)
+            fillColour = playerSurf.map_rgb(BLACK)
+            area.append(startPoint)
+            while len(area) > 0:
+                posX, posY = area.pop()
+                try:
+                    if surfArray[posX, posY] != currentColour:
+                        continue
+                except IndexError:
+                    continue
+                surfArray[posX, posY] = fillColour
+                area.append((posX + 1, posY))
+                area.append((posX - 1, posY))
+                area.append((posX, posY + 1))
+                area.append((posX, posY - 1))
+            pygame.surfarray.blit_array(playerSurf, surfArray)
 
 def drawBoard(board):
     current = board.curr
@@ -433,7 +497,17 @@ def drawBoard(board):
         pygame.draw.rect(screen, BLACK, current.rect)
         current = current.next
     current.updateRect()
+    pygame.draw.line(screen, BLACK, (500, 10), (500, 500), 1)
+    pygame.draw.line(screen, BLACK, (10, 10), (10, 500), 1)
+    pygame.draw.line(screen, BLACK, (10, 500), (500, 500), 1)
+    pygame.draw.line(screen, BLACK, (10, 10), (500, 10), 1)
+    pygame.draw.line(playerSurf, BLACK, (500, 10), (500, 500), 1)
+    pygame.draw.line(playerSurf, BLACK, (10, 10), (10, 500), 1)
+    pygame.draw.line(playerSurf, BLACK, (10, 500), (500, 500), 1)
+    pygame.draw.line(playerSurf, BLACK, (10, 10), (500, 10), 1)
     pygame.draw.rect(screen, BLACK, current.rect)
+    pygame.draw.rect(playerSurf, BLACK, current.rect)
+
 
 def drawObjects(player, qix, sparxLists):
     pygame.draw.rect(screen, GREEN, player.rect)
@@ -441,14 +515,19 @@ def drawObjects(player, qix, sparxLists):
     for i in sparxLists:
         pygame.draw.rect(screen, BLACK, i.rect)
 
+
 def drawPush(player):
     for i in player.pushNodes:
         if i.getHitbox() is not None:
             pygame.draw.rect(screen, BLACK, i.rect)
+            pygame.draw.rect(playerSurf, BLACK, i.rect)
         elif i.getOrientation() == DOWN or i.getOrientation() == RIGHT:
             pygame.draw.rect(screen, BLACK, (i.getx(), i.gety(), player.x - i.getx() + 1, player.y - i.gety() + 1))
+            pygame.draw.rect(playerSurf, BLACK, (i.getx(), i.gety(), player.x - i.getx() + 1, player.y - i.gety() + 1))
         else:
             pygame.draw.rect(screen, BLACK, (player.x, player.y, i.getx() - player.x + 1, i.gety() - player.y + 1))
+            pygame.draw.rect(playerSurf, BLACK, (player.x, player.y, i.getx() - player.x + 1, i.gety() - player.y + 1))
+
 
 board = Board()
 qix = Qix(10, board, 1)
@@ -504,6 +583,6 @@ while running:
                 player.resetPush(sparx.getDamage())
             elif check == FAIL:
                 player.resetPush(0)
-            
+
     pygame.display.update()
 
