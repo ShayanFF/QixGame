@@ -5,9 +5,10 @@ from pygame.locals import *
 pygame.init()
 
 """Sets size of window, can be changed later"""
-screen = pygame.display.set_mode((600, 600))
+screen = pygame.display.set_mode((510, 575))
 pygame.display.set_caption('Qix')
 clock = pygame.time.Clock()
+font = pygame.font.SysFont('arial', 20)
 
 """Some placeholder colours to be used later"""
 BLACK = (0, 0, 0)
@@ -16,6 +17,12 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 AQUA = (0, 255, 255)
+LevelText1 = font.render('LEVEL: ', True, BLACK)
+LevelText2 = font.render(str(temp), True, BLACK)
+HealthText1 = font.render('HEALTH: ', True, BLACK)
+HealthText2 = font.render(str(temp), True, BLACK)
+CompletionText1 = font.render('BOARD %: ', True, BLACK)
+CompletionText2 = font.render(str(temp), True, BLACK)
 
 screen.fill(AQUA)
 playerSurf = pygame.Surface((510, 510))
@@ -473,6 +480,15 @@ while running:
     clock.tick(10)
     screen.fill(AQUA)
     screen.blit(playerSurf, (0, 0))
+    LevelText2 = font.render(str(temp), True, BLACK)
+    HealthText2 = font.render(str(temp), True, BLACK)
+    CompletionText2 = font.render(str(temp), True, BLACK)
+    screen.blit(LevelText1, (50, 525))
+    screen.blit(LevelText2, (110, 525))
+    screen.blit(HealthText1, (210, 525))
+    screen.blit(HealthText2, (285, 525))
+    screen.blit(CompletionText1, (370, 525))
+    screen.blit(CompletionText2, (460, 525))
     drawBoard(board)
     drawObjects(player, qix, sparxList)
     if player.isPush is True:
