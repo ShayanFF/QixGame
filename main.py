@@ -1,6 +1,7 @@
 import pygame
 import sys
 from pygame.locals import *
+from random import randrange
 
 pygame.init()
 
@@ -303,6 +304,32 @@ class Qix:
     def getDamage(self):
         return self.damage
 
+    def move(self):
+        dir = self.getDirection()
+        '''
+        0 = UP
+        1 = DOWN
+        2 = LEFT
+        3 = RIGHT'''
+        if dir == 0:
+            self.y -= self.speed
+        elif dir == 1:
+            self.y += self.speed
+        elif dir == 2:
+            self.x -= self.speed
+        elif dir == 3:
+            self.x += self.speed
+
+
+    def getDirection(self):
+        num = randrange(4)
+        return num
+
+    def moveHitbox(self):
+        self.rect.x = self.x
+        self.rect.y = self.y
+        self.rect.center = (self.x, self.y)
+
 
 class Sparx:
     def __init__(self, speed, board, damage):
@@ -520,14 +547,20 @@ def drawPush(player):
     for i in player.pushNodes:
         if i.getHitbox() is not None:
             pygame.draw.rect(screen, BLACK, i.rect)
-            pygame.draw.rect(playerSurf, BLACK, i.rect)
         elif i.getOrientation() == DOWN or i.getOrientation() == RIGHT:
             pygame.draw.rect(screen, BLACK, (i.getx(), i.gety(), player.x - i.getx() + 1, player.y - i.gety() + 1))
-            pygame.draw.rect(playerSurf, BLACK, (i.getx(), i.gety(), player.x - i.getx() + 1, player.y - i.gety() + 1))
         else:
             pygame.draw.rect(screen, BLACK, (player.x, player.y, i.getx() - player.x + 1, i.gety() - player.y + 1))
-            pygame.draw.rect(playerSurf, BLACK, (player.x, player.y, i.getx() - player.x + 1, i.gety() - player.y + 1))
 
+
+def dupeDrawPush(player):
+    for i in player.pushNodes:
+        if i.getHitbox() is not None:
+            pygame.draw.rect(playerSurf, BLACK, i.rect)
+        elif i.getOrientation() == DOWN or i.getOrientation() == RIGHT:
+            pygame.draw.rect(playerSurf, BLACK, (i.getx(), i.gety(), player.x - i.getx() + 1, player.y - i.gety() + 1))
+        else:
+            pygame.draw.rect(playerSurf, BLACK, (player.x, player.y, i.getx() - player.x + 1, i.gety() - player.y + 1))
 
 board = Board()
 qix = Qix(10, board, 1)
@@ -557,6 +590,7 @@ while running:
 
     '''screen = pygame.Surface.copy(screen)'''
     clock.tick(10)
+    qix.move()
     screen.fill(AQUA)
     screen.blit(playerSurf, (0, 0))
     LevelText2 = font.render(str(temp), True, BLACK)
@@ -576,6 +610,7 @@ while running:
         if check != NONE:
             screen.fill(AQUA)
             if check == PASS:
+                dupeDrawPush(player)
                 player.endPush()
             elif check == QIX:
                 player.resetPush(qix.getDamage())
@@ -585,4 +620,3 @@ while running:
                 player.resetPush(0)
 
     pygame.display.update()
-
