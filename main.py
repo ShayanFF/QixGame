@@ -16,7 +16,6 @@ startNum = 10
 endNum = 750
 LabelNum = endNum/4
 start = True
-gameWon = False
 
 """Some placeholder colours to be used later"""
 BLACK = (0, 0, 0)
@@ -68,59 +67,6 @@ PASS = 1
 NONE = 2
 QIX = 3
 SPARX = 4
-
-
-def startScreen():
-    global start
-    while start is True:
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                pygame.quit()
-                sys.exit()
-
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_r]:
-            start = False
-        screen.fill(WHITE)
-        screen.blit(startScreenText, (endNum/2 -35, endNum/2 - 100))
-        pygame.display.update()
-
-        clock.tick(15)
-
-def gameOverScreen():
-    for event in pygame.event.get():
-        if event.type == QUIT:
-            pygame.quit()
-            sys.exit()
-
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_r]:
-        gameState = GAME_RUNNING
-        restartGame()
-        return 0
-    screen.blit(gameOverScreen1, (endNum/2 -140, endNum/2 - 100))
-    screen.blit(gameOverScreen2, (endNum / 2 - 50, endNum / 2))
-    pygame.display.update()
-
-    clock.tick(15)
-    
-def victoryScreen():
-    global gameWon
-    while gameWon is True:
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                pygame.quit()
-                sys.exit()
-
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_r]:
-            gameWon = False
-        screen.fill(WHITE)
-        screen.blit(victoryText1, (endNum / 2 - 100, endNum / 2 - 100))
-        screen.blit(victoryText2, (endNum / 2 - 50, endNum / 2))
-        pygame.display.update()
-
-        clock.tick(15)
         
 class Player:
     def __init__(self, life, speed, board):
@@ -641,15 +587,6 @@ def drawPush(player):
         else:
             pygame.draw.rect(screen, BLACK, (player.x, player.y, i.getx() - player.x + 1, i.gety() - player.y + 1))
 
-'''def dupeDrawPush(player):
-    for i in player.pushNodes:
-        if i.getHitbox() is not None:
-            pygame.draw.rect(playerSurf, BLACK, i.rect)
-        elif i.getOrientation() == DOWN or i.getOrientation() == RIGHT:
-            pygame.draw.rect(playerSurf, BLACK, (i.getx(), i.gety(), player.x - i.getx() + 1, player.y - i.gety() + 1))
-        else:
-            pygame.draw.rect(playerSurf, BLACK, (player.x, player.y, i.getx() - player.x + 1, i.gety() - player.y + 1))'''
-
 def cycleLevel(board, sparxList, level):
     if level == 5:
         sparxList.append(Sparx(sparxList[0].speed, board.prev, 1))
@@ -662,20 +599,20 @@ SPEED_INC = 1
 
 percent = 50
 
-startScreen()
 board = Board()
 qix = Qix(5, board, 1)
 sparxList = [Sparx(5, board, 1)]
-player = Player(10, 5, board)
+player = Player(1, 5, board)
 level = 1
 prevLevel = 1
 
 def restartGame():
+    global board, qix, sparxList, player, level, prevLevel
     startScreen()
     board = Board()
     qix = Qix(5, board, 1)
     sparxList = [Sparx(5, board, 1)]
-    player = Player(10, 5, board)
+    player = Player(1, 5, board)
     level = 1
     prevLevel = 1
 
@@ -683,18 +620,74 @@ GAME_RUNNING = 0
 GAME_OVER = 1
 GAME_WON = 2
 gameState = 0
-while running:
+
+def startScreen():
+    global start
+    while start is True:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_r]:
+            start = False
+        screen.fill(WHITE)
+        screen.blit(startScreenText, (endNum/2 -35, endNum/2 - 100))
+        pygame.display.update()
+
+        clock.tick(15)
+
+def gameOverScreen():
+    global gameState
     for event in pygame.event.get():
         if event.type == QUIT:
-            running = False
             pygame.quit()
             sys.exit()
+
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_r]:
+        gameState = GAME_RUNNING
+        restartGame()
+        return 0
+    screen.blit(gameOverScreen1, (endNum/2 -140, endNum/2 - 100))
+    screen.blit(gameOverScreen2, (endNum / 2 - 50, endNum / 2))
+    pygame.display.update()
+
+    clock.tick(15)
+    
+def victoryScreen():
+    global gameState
+    for event in pygame.event.get():
+        if event.type == QUIT:
+            pygame.quit()
+            sys.exit()
+
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_r]:
+        gameState = GAME_RUNNING
+        restartGame()
+    screen.fill(WHITE)
+    screen.blit(victoryText1, (endNum / 2 - 100, endNum / 2 - 100))
+    screen.blit(victoryText2, (endNum / 2 - 50, endNum / 2))
+    pygame.display.update()
+
+    clock.tick(15)
+
+startScreen()
+
+while running:
     # draw the board
     if gameState == GAME_OVER:
         gameOverScreen()
     elif gameState == GAME_WON:
-        ""
+        victoryScreen()
     elif gameState == GAME_RUNNING:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+
         if level != prevLevel:
             pygame.time.wait(5000)
             prevLevel = level
