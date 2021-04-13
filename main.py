@@ -634,6 +634,7 @@ def startScreen():
             start = False
         screen.fill(WHITE)
         screen.blit(startScreenText, (endNum/2 -35, endNum/2 - 100))
+        screen.blit(startScreenText2, (endNum/2 - 50, endNum/2))
         pygame.display.update()
 
         clock.tick(15)
