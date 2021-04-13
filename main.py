@@ -25,12 +25,15 @@ GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 AQUA = (0, 255, 255)
 startScreenText = titleFont.render('QIX', True, BLACK)
+startScreenText2 = font.render('Press R to start', True, BLACK)
 LevelText1 = font.render('LEVEL: ', True, BLACK)
 LevelText2 = font.render(str(temp), True, BLACK)
 HealthText1 = font.render('HEALTH: ', True, BLACK)
 HealthText2 = font.render(str(temp), True, BLACK)
 CompletionText1 = font.render('BOARD %: ', True, BLACK)
 CompletionText2 = font.render(str(temp), True, BLACK)
+gameOverScreen1 = titleFont.render('GAME OVER', True, RED)
+gameOverScreen2 = font.render('Press R to restart', True, RED)
 
 screen.fill(AQUA)
 playerSurf = pygame.Surface((765, 800))
@@ -81,7 +84,23 @@ def startScreen():
 
         clock.tick(15)
 
+def gameOverScreen():
+    global gameOver
+    while gameOver is True:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
 
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_r]:
+            gameOver = False
+        screen.blit(gameOverScreen1, (endNum/2 -140, endNum/2 - 100))
+        screen.blit(gameOverScreen2, (endNum / 2 - 50, endNum / 2))
+        pygame.display.update()
+
+        clock.tick(15)
+        
 class Player:
     def __init__(self, life, speed, board):
         self.life = life
