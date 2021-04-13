@@ -515,7 +515,7 @@ class Board:
         return (sum1 - sum2) / 2
 
     def checkWin(self, percent):
-        if self.getArea() <= ((percent / 100) * self.startingArea):
+        if self.getArea() > (((100-percent) / 100) * self.startingArea):
             return True
         else:
             return False
@@ -587,13 +587,11 @@ def drawBoard(board):
     current.updateRect()
     pygame.draw.rect(screen, BLACK, current.rect)
 
-
 def drawObjects(player, qix, sparxLists):
     pygame.draw.rect(screen, GREEN, player.rect)
     pygame.draw.rect(screen, RED, qix.rect)
     for i in sparxLists:
         pygame.draw.rect(screen, BLACK, i.rect)
-
 
 def drawPush(player):
     for i in player.pushNodes:
@@ -612,12 +610,28 @@ def drawPush(player):
             pygame.draw.rect(playerSurf, BLACK, (i.getx(), i.gety(), player.x - i.getx() + 1, player.y - i.gety() + 1))
         else:
             pygame.draw.rect(playerSurf, BLACK, (player.x, player.y, i.getx() - player.x + 1, i.gety() - player.y + 1))'''
+
+def cycleLevel(board, sparxList, level):
+    if level == 5:
+        sparxList[0] = Sparx(sparxList[0].speed + SPEED_INC, board, sparxList[x].damage)
+        sparxList.append(Sparx(sparxList[0].speed, board.prev, 1))
+        return sparxList
+    for x in range(len(sparxList)):
+        sparxList[x] = Sparx(sparxList[x].speed, board, sparxList[x].damage)
+    return sparxList
+
+SPEED_INC = 5
+
+percent = 50
+
 startScreen()
 board = Board()
 qix = Qix(5, board, 1)
-sparx1 = Sparx(5, board, 1)
-sparxList = [sparx1]
+sparxList = [Sparx(5, board, 1)]
 player = Player(10, 5, board)
+level = 1
+prevLevel = 1
+gameEnd = False
 while running:
     for event in pygame.event.get():
         if event.type == QUIT:
@@ -625,49 +639,72 @@ while running:
             pygame.quit()
             sys.exit()
     # draw the board
-    keys = pygame.key.get_pressed()
+    if gameEnd is False:
+        if level != prevLevel:
+            pygame.time.wait(5000)
+            prevLevel = level
 
-    direction = None
-    if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-        player.move(LEFT, board)
-    elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-        player.move(RIGHT, board)
-    elif keys[pygame.K_UP] or keys[pygame.K_w]:
-        player.move(UP, board)
-    elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
-        player.move(DOWN, board)
-    elif keys[pygame.K_SPACE]:
-        player.makePush()
+        keys = pygame.key.get_pressed()
 
-    '''screen = pygame.Surface.copy(screen)'''
-    clock.tick(40)
-    qix.move()
-    screen.fill(AQUA)
-    screen.blit(playerSurf, (0, 0))
-    LevelText2 = font.render(str(temp), True, BLACK)
-    HealthText2 = font.render(str(temp), True, BLACK)
-    CompletionText2 = font.render(str(temp), True, BLACK)
-    screen.blit(LevelText1, (LabelNum -40, endNum+15))
-    screen.blit(LevelText2, (LabelNum + 20, endNum+15))
-    screen.blit(HealthText1, (LabelNum*2 - 40, endNum+15))
-    screen.blit(HealthText2, (LabelNum*2 + 30, endNum+15))
-    screen.blit(CompletionText1, (LabelNum*3 - 40, endNum+15))
-    screen.blit(CompletionText2, (LabelNum*3 + 50, endNum+15))
-    drawBoard(board)
-    if player.isPush is True:
-        drawPush(player)
-        check = player.checkCollision(qix, sparxList, board)
-        if check != NONE:
-            screen.fill(AQUA)
-            if check == PASS:
-                player.endPush()
-            elif check == QIX:
-                player.resetPush(qix.getDamage())
-            elif check == SPARX:
-                player.resetPush(sparx1.getDamage())
-            elif check == FAIL:
-                player.resetPush(0)
-    sparx1.moveCircle()
-    qix.move()
-    drawObjects(player, qix, sparxList)
-    pygame.display.update()
+        direction = None
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+            player.move(LEFT, board)
+        elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+            player.move(RIGHT, board)
+        elif keys[pygame.K_UP] or keys[pygame.K_w]:
+            player.move(UP, board)
+        elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
+            player.move(DOWN, board)
+        elif keys[pygame.K_SPACE]:
+            player.makePush()
+
+        '''screen = pygame.Surface.copy(screen)'''
+        clock.tick(40)
+        qix.move()
+        screen.fill(AQUA)
+        screen.blit(playerSurf, (0, 0))
+        LevelText2 = font.render(str(level), True, BLACK)
+        HealthText2 = font.render(str(player.life), True, BLACK)
+        CompletionText2 = font.render(str(round((board.getArea() / board.startingArea) * 100)), True, BLACK)
+        screen.blit(LevelText1, (LabelNum -40, endNum+15))
+        screen.blit(LevelText2, (LabelNum + 20, endNum+15))
+        screen.blit(HealthText1, (LabelNum*2 - 40, endNum+15))
+        screen.blit(HealthText2, (LabelNum*2 + 30, endNum+15))
+        screen.blit(CompletionText1, (LabelNum*3 - 40, endNum+15))
+        screen.blit(CompletionText2, (LabelNum*3 + 50, endNum+15))
+        drawBoard(board)
+        if player.isPush is True:
+            drawPush(player)
+            check = player.checkCollision(qix, sparxList, board)
+            if check != NONE:
+                screen.fill(AQUA)
+                if check == PASS:
+                    player.endPush()
+                    if board.checkWin(percent) is True and level == 5:
+                        gameEnd = True
+                    elif board.checkWin(percent) is True:
+                        drawBoard(board)
+                        drawObjects(player, qix, sparxList)
+                        pygame.display.update()
+                        pygame.time.wait(5000)
+                        screen.fill(AQUA)
+                        pygame.display.update()
+                        level += 1
+                        board = Board()
+                        sparxList = cycleLevel(board, sparxList, level)
+                        qix = Qix(qix.speed + SPEED_INC, board, qix.damage)
+                        player = Player(player.life, player.speed, board)
+                        drawBoard(board)
+                        percent += 5
+                elif check == QIX:
+                    player.resetPush(qix.getDamage())
+                elif check == SPARX:
+                    player.resetPush(sparxList[0].getDamage())
+                elif check == FAIL:
+                    player.resetPush(0)
+        if level == prevLevel:
+            for x in sparxList:
+                x.moveCircle()
+            qix.move()
+        drawObjects(player, qix, sparxList)
+        pygame.display.update()
