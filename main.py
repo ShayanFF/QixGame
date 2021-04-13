@@ -11,9 +11,11 @@ temp = 1
 pygame.display.set_caption('Qix')
 clock = pygame.time.Clock()
 font = pygame.font.SysFont('arial', 20)
+titleFont = pygame.font.SysFont('arial', 60)
 startNum = 10
 endNum = 750
 LabelNum = endNum/4
+start = True
 
 """Some placeholder colours to be used later"""
 BLACK = (0, 0, 0)
@@ -22,6 +24,7 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 AQUA = (0, 255, 255)
+startScreenText = titleFont.render('QIX', True, BLACK)
 LevelText1 = font.render('LEVEL: ', True, BLACK)
 LevelText2 = font.render(str(temp), True, BLACK)
 HealthText1 = font.render('HEALTH: ', True, BLACK)
@@ -59,6 +62,24 @@ PASS = 1
 NONE = 2
 QIX = 3
 SPARX = 4
+
+
+def startScreen():
+    global start
+    while start is True:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_SPACE]:
+            start = False
+        screen.fill(WHITE)
+        screen.blit(startScreenText, (endNum/2 -35, endNum/2 - 100))
+        pygame.display.update()
+
+        clock.tick(15)
 
 
 class Player:
@@ -564,16 +585,7 @@ def drawBoard(board):
         pygame.draw.rect(screen, BLACK, current.rect)
         current = current.next
     current.updateRect()
-    pygame.draw.line(screen, BLACK, (endNum, startNum), (endNum, endNum), 1)
-    pygame.draw.line(screen, BLACK, (startNum, startNum), (startNum, endNum), 1)
-    pygame.draw.line(screen, BLACK, (startNum, endNum), (endNum, endNum), 1)
-    pygame.draw.line(screen, BLACK, (startNum, startNum), (endNum, startNum), 1)
-    pygame.draw.line(playerSurf, BLACK, (endNum, startNum), (endNum, endNum), 1)
-    pygame.draw.line(playerSurf, BLACK, (startNum, startNum), (startNum, endNum), 1)
-    pygame.draw.line(playerSurf, BLACK, (startNum, endNum), (endNum, endNum), 1)
-    pygame.draw.line(playerSurf, BLACK, (startNum, startNum), (endNum, startNum), 1)
     pygame.draw.rect(screen, BLACK, current.rect)
-    pygame.draw.rect(playerSurf, BLACK, current.rect)
 
 
 def drawObjects(player, qix, sparxLists):
@@ -592,15 +604,15 @@ def drawPush(player):
         else:
             pygame.draw.rect(screen, BLACK, (player.x, player.y, i.getx() - player.x + 1, i.gety() - player.y + 1))
 
-def dupeDrawPush(player):
+'''def dupeDrawPush(player):
     for i in player.pushNodes:
         if i.getHitbox() is not None:
             pygame.draw.rect(playerSurf, BLACK, i.rect)
         elif i.getOrientation() == DOWN or i.getOrientation() == RIGHT:
             pygame.draw.rect(playerSurf, BLACK, (i.getx(), i.gety(), player.x - i.getx() + 1, player.y - i.gety() + 1))
         else:
-            pygame.draw.rect(playerSurf, BLACK, (player.x, player.y, i.getx() - player.x + 1, i.gety() - player.y + 1))
-
+            pygame.draw.rect(playerSurf, BLACK, (player.x, player.y, i.getx() - player.x + 1, i.gety() - player.y + 1))'''
+startScreen()
 board = Board()
 qix = Qix(5, board, 1)
 sparx1 = Sparx(5, board, 1)
@@ -648,7 +660,6 @@ while running:
         if check != NONE:
             screen.fill(AQUA)
             if check == PASS:
-                dupeDrawPush(player)
                 player.endPush()
             elif check == QIX:
                 player.resetPush(qix.getDamage())
