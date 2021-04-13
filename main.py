@@ -623,7 +623,6 @@ while running:
     screen.blit(CompletionText1, (370, 525))
     screen.blit(CompletionText2, (460, 525))
     drawBoard(board)
-    drawObjects(player, qix, sparxList)
     if player.isPush is True:
         drawPush(player)
         check = player.checkCollision(qix, sparxList, board)
