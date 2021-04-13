@@ -73,7 +73,7 @@ def startScreen():
                 sys.exit()
 
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_SPACE]:
+        if keys[pygame.K_r]:
             start = False
         screen.fill(WHITE)
         screen.blit(startScreenText, (endNum/2 -35, endNum/2 - 100))
@@ -613,14 +613,13 @@ def drawPush(player):
 
 def cycleLevel(board, sparxList, level):
     if level == 5:
-        sparxList[0] = Sparx(sparxList[0].speed + SPEED_INC, board, sparxList[x].damage)
         sparxList.append(Sparx(sparxList[0].speed, board.prev, 1))
         return sparxList
     for x in range(len(sparxList)):
         sparxList[x] = Sparx(sparxList[x].speed, board, sparxList[x].damage)
     return sparxList
 
-SPEED_INC = 5
+SPEED_INC = 1
 
 percent = 50
 
@@ -631,7 +630,11 @@ sparxList = [Sparx(5, board, 1)]
 player = Player(10, 5, board)
 level = 1
 prevLevel = 1
-gameEnd = False
+
+GAME_RUNNING = 0 
+GAME_OVER = 1
+GAME_WON = 2
+gameState = 0
 while running:
     for event in pygame.event.get():
         if event.type == QUIT:
@@ -639,7 +642,7 @@ while running:
             pygame.quit()
             sys.exit()
     # draw the board
-    if gameEnd is False:
+    if gameState == GAME_RUNNING:
         if level != prevLevel:
             pygame.time.wait(5000)
             prevLevel = level
@@ -659,7 +662,7 @@ while running:
             player.makePush()
 
         '''screen = pygame.Surface.copy(screen)'''
-        clock.tick(40)
+        clock.tick(30)
         qix.move()
         screen.fill(AQUA)
         screen.blit(playerSurf, (0, 0))
