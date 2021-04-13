@@ -85,21 +85,21 @@ def startScreen():
         clock.tick(15)
 
 def gameOverScreen():
-    global gameOver
-    while gameOver is True:
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                pygame.quit()
-                sys.exit()
+    for event in pygame.event.get():
+        if event.type == QUIT:
+            pygame.quit()
+            sys.exit()
 
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_r]:
-            gameOver = False
-        screen.blit(gameOverScreen1, (endNum/2 -140, endNum/2 - 100))
-        screen.blit(gameOverScreen2, (endNum / 2 - 50, endNum / 2))
-        pygame.display.update()
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_r]:
+        gameState = GAME_RUNNING
+        restartGame()
+        return 0
+    screen.blit(gameOverScreen1, (endNum/2 -140, endNum/2 - 100))
+    screen.blit(gameOverScreen2, (endNum / 2 - 50, endNum / 2))
+    pygame.display.update()
 
-        clock.tick(15)
+    clock.tick(15)
         
 class Player:
     def __init__(self, life, speed, board):
@@ -327,7 +327,6 @@ class Player:
         self.pushNodes = []
         self.life -= damage
         self.immunity = 300
-
 
 class Qix:
     def __init__(self, speed, board, damage):
@@ -650,6 +649,15 @@ player = Player(10, 5, board)
 level = 1
 prevLevel = 1
 
+def restartGame():
+    startScreen()
+    board = Board()
+    qix = Qix(5, board, 1)
+    sparxList = [Sparx(5, board, 1)]
+    player = Player(10, 5, board)
+    level = 1
+    prevLevel = 1
+
 GAME_RUNNING = 0 
 GAME_OVER = 1
 GAME_WON = 2
@@ -661,7 +669,11 @@ while running:
             pygame.quit()
             sys.exit()
     # draw the board
-    if gameState == GAME_RUNNING:
+    if gameState == GAME_OVER:
+        gameOverScreen()
+    elif gameState == GAME_WON:
+        ""
+    elif gameState == GAME_RUNNING:
         if level != prevLevel:
             pygame.time.wait(5000)
             prevLevel = level
@@ -703,7 +715,7 @@ while running:
                 if check == PASS:
                     player.endPush()
                     if board.checkWin(percent) is True and level == 5:
-                        gameEnd = True
+                        gameState = GAME_WON
                     elif board.checkWin(percent) is True:
                         drawBoard(board)
                         drawObjects(player, qix, sparxList)
@@ -724,6 +736,8 @@ while running:
                     player.resetPush(sparxList[0].getDamage())
                 elif check == FAIL:
                     player.resetPush(0)
+                if player.life == 0:
+                    gameState = GAME_OVER
         if level == prevLevel:
             for x in sparxList:
                 x.moveCircle()
