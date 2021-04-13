@@ -293,8 +293,8 @@ class Qix:
     def __init__(self, speed, board, damage):
         self.speed = speed
         self.damage = damage
-        self.x = 370
-        self.y = 370
+        self.x = endNum/2
+        self.y = endNum/2
         self.location = board.curr
         self.rect = pygame.Rect(self.x, self.y, 10, 10)
         self.rect.center = (self.x, self.y)
