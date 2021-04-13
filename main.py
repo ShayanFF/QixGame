@@ -6,12 +6,14 @@ from random import randrange
 pygame.init()
 
 """Sets size of window, can be changed later"""
-screen = pygame.display.set_mode((510, 575))
+screen = pygame.display.set_mode((765, 800))
 temp = 1
 pygame.display.set_caption('Qix')
 clock = pygame.time.Clock()
 font = pygame.font.SysFont('arial', 20)
-
+startNum = 10
+endNum = 750
+LabelNum = endNum/4
 
 """Some placeholder colours to be used later"""
 BLACK = (0, 0, 0)
@@ -28,7 +30,7 @@ CompletionText1 = font.render('BOARD %: ', True, BLACK)
 CompletionText2 = font.render(str(temp), True, BLACK)
 
 screen.fill(AQUA)
-playerSurf = pygame.Surface((510, 510))
+playerSurf = pygame.Surface((765, 800))
 playerSurf.fill(AQUA)
 """
 You can increment these with maxWidth and height to draw the original border
@@ -39,10 +41,10 @@ and 25 should be able to stay the same although I haven't tested it yet
 """
 
 
-
-pygame.draw.rect(screen, BLACK, (255, 505, 10, 10))
-x = 255
-y = 505
+newStart = endNum//2
+pygame.draw.rect(screen, BLACK, ((newStart), (newStart-5), 10, 10))
+x = newStart
+y = newStart-5
 speed = 5
 running = True
 direction = None
@@ -63,8 +65,8 @@ class Player:
     def __init__(self, life, speed, board):
         self.life = life
         self.speed = speed
-        self.x = 250
-        self.y = 500
+        self.x = newStart
+        self.y = endNum
         self.rect = pygame.Rect(self.x, self.y, 10, 10)
         self.rect.center = (self.x, self.y)
         self.location = board.curr
@@ -244,7 +246,6 @@ class Player:
 
     def endPush(self):
         self.isPush = False
-        board.fillArea(self.pushNodes)
         self.pushNodes = []
 
     def checkCollision(self, qix, sparxList, board):
@@ -292,8 +293,8 @@ class Qix:
     def __init__(self, speed, board, damage):
         self.speed = speed
         self.damage = damage
-        self.x = 250
-        self.y = 250
+        self.x = 370
+        self.y = 370
         self.location = board.curr
         self.rect = pygame.Rect(self.x, self.y, 10, 10)
         self.rect.center = (self.x, self.y)
@@ -358,11 +359,11 @@ class Sparx:
         if self.location.orientation == UP:
             self.y -= self.speed
         elif self.location.orientation == DOWN:
-            self.y += self.speed 
+            self.y += self.speed
         elif self.location.orientation == LEFT:
             self.x -= self.speed
         elif self.location.orientation == RIGHT:
-            self.x += self.speed 
+            self.x += self.speed
         self.moveHitbox()
 
 
@@ -406,7 +407,7 @@ def findAreaList(listNodes):
 
 class Board:
     def __init__(self):
-        startingNodes = [Node(10, 500, RIGHT), Node(500, 500, UP), Node(500, 10, LEFT), Node(10, 10, DOWN)]
+        startingNodes = [Node(startNum, endNum, RIGHT), Node(endNum, endNum, UP), Node(endNum, startNum, LEFT), Node(startNum, startNum, DOWN)]
         startingNodes[0].prev = startingNodes[-1]
         startingNodes[-1].prev = startingNodes[-2]
         startingNodes[0].next = startingNodes[1]
@@ -545,14 +546,14 @@ def drawBoard(board):
         pygame.draw.rect(screen, BLACK, current.rect)
         current = current.next
     current.updateRect()
-    pygame.draw.line(screen, BLACK, (500, 10), (500, 500), 1)
-    pygame.draw.line(screen, BLACK, (10, 10), (10, 500), 1)
-    pygame.draw.line(screen, BLACK, (10, 500), (500, 500), 1)
-    pygame.draw.line(screen, BLACK, (10, 10), (500, 10), 1)
-    pygame.draw.line(playerSurf, BLACK, (500, 10), (500, 500), 1)
-    pygame.draw.line(playerSurf, BLACK, (10, 10), (10, 500), 1)
-    pygame.draw.line(playerSurf, BLACK, (10, 500), (500, 500), 1)
-    pygame.draw.line(playerSurf, BLACK, (10, 10), (500, 10), 1)
+    pygame.draw.line(screen, BLACK, (endNum, startNum), (endNum, endNum), 1)
+    pygame.draw.line(screen, BLACK, (startNum, startNum), (startNum, endNum), 1)
+    pygame.draw.line(screen, BLACK, (startNum, endNum), (endNum, endNum), 1)
+    pygame.draw.line(screen, BLACK, (startNum, startNum), (endNum, startNum), 1)
+    pygame.draw.line(playerSurf, BLACK, (endNum, startNum), (endNum, endNum), 1)
+    pygame.draw.line(playerSurf, BLACK, (startNum, startNum), (startNum, endNum), 1)
+    pygame.draw.line(playerSurf, BLACK, (startNum, endNum), (endNum, endNum), 1)
+    pygame.draw.line(playerSurf, BLACK, (startNum, startNum), (endNum, startNum), 1)
     pygame.draw.rect(screen, BLACK, current.rect)
     pygame.draw.rect(playerSurf, BLACK, current.rect)
 
@@ -616,12 +617,12 @@ while running:
     LevelText2 = font.render(str(temp), True, BLACK)
     HealthText2 = font.render(str(temp), True, BLACK)
     CompletionText2 = font.render(str(temp), True, BLACK)
-    screen.blit(LevelText1, (50, 525))
-    screen.blit(LevelText2, (110, 525))
-    screen.blit(HealthText1, (210, 525))
-    screen.blit(HealthText2, (285, 525))
-    screen.blit(CompletionText1, (370, 525))
-    screen.blit(CompletionText2, (460, 525))
+    screen.blit(LevelText1, (LabelNum -40, endNum+15))
+    screen.blit(LevelText2, (LabelNum + 20, endNum+15))
+    screen.blit(HealthText1, (LabelNum*2 - 40, endNum+15))
+    screen.blit(HealthText2, (LabelNum*2 + 30, endNum+15))
+    screen.blit(CompletionText1, (LabelNum*3 - 40, endNum+15))
+    screen.blit(CompletionText2, (LabelNum*3 + 50, endNum+15))
     drawBoard(board)
     if player.isPush is True:
         drawPush(player)
