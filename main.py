@@ -16,6 +16,7 @@ startNum = 10
 endNum = 750
 LabelNum = endNum/4
 start = True
+gameWon = False
 
 """Some placeholder colours to be used later"""
 BLACK = (0, 0, 0)
@@ -34,6 +35,8 @@ CompletionText1 = font.render('BOARD %: ', True, BLACK)
 CompletionText2 = font.render(str(temp), True, BLACK)
 gameOverScreen1 = titleFont.render('GAME OVER', True, RED)
 gameOverScreen2 = font.render('Press R to restart', True, RED)
+victoryText1 = titleFont.render('YOU WIN!', True, RED)
+victoryText2 = font.render('Press R to replay', True, RED)
 
 screen.fill(AQUA)
 playerSurf = pygame.Surface((765, 800))
@@ -100,6 +103,24 @@ def gameOverScreen():
     pygame.display.update()
 
     clock.tick(15)
+    
+def victoryScreen():
+    global gameWon
+    while gameWon is True:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_r]:
+            gameWon = False
+        screen.fill(WHITE)
+        screen.blit(victoryText1, (endNum / 2 - 100, endNum / 2 - 100))
+        screen.blit(victoryText2, (endNum / 2 - 50, endNum / 2))
+        pygame.display.update()
+
+        clock.tick(15)
         
 class Player:
     def __init__(self, life, speed, board):
