@@ -320,7 +320,7 @@ class Qix:
             self.x -= self.speed
         elif dir == 3:
             self.x += self.speed
-
+        self.moveHitbox()
 
     def getDirection(self):
         num = randrange(4)
@@ -330,6 +330,24 @@ class Qix:
         self.rect.x = self.x
         self.rect.y = self.y
         self.rect.center = (self.x, self.y)
+
+    def checkCollision(self, dir, board):
+        current = board.curr
+        firstNode = current
+        while current.next is not firstNode:
+            if current.rect.collidepoint(self.rect.center):
+                if dir == 0:
+                    self.y += 35
+                    return
+                elif dir == 1:
+                    self.y -= 35
+                    return
+                elif dir == 2:
+                    self.x += 35
+                    return
+                elif dir == 3:
+                    self.x += 35
+                    return
 
 
 class Sparx:
@@ -639,5 +657,6 @@ while running:
             elif check == FAIL:
                 player.resetPush(0)
     sparx1.moveCircle()
+    qix.move()
     drawObjects(player, qix, sparxList)
     pygame.display.update()
