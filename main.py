@@ -1,5 +1,6 @@
 import pygame
 import sys
+import random
 from pygame.locals import *
 from random import randrange
 
@@ -255,7 +256,7 @@ class Player:
         self.isPush = False
         self.pushNodes = []
 
-    def checkCollision(self, qix, sparxList, board):
+    def checkCollisionPush(self, qix, sparxList, board):
         if self.rect.colliderect(qix.rect):
             return QIX
         for i in sparxList:
@@ -264,6 +265,8 @@ class Player:
         for i in self.pushNodes:
             if i.rect is not None and i.rect.collidepoint(self.rect.center):
                 return FAIL
+            if i.rect is not None and i.rect.colliderect(qix.rect):
+                return QIX
         current = board.curr
         firstNode = current
         while current.next is not firstNode:
@@ -293,14 +296,30 @@ class Player:
         self.isPush = False
         self.pushNodes = []
         self.life -= damage
-        self.immunity = 300
+        self.immunity = 120
+
+    def checkCollision(self, sparxList):
+        if self.immunity == 0:
+            for x in sparxList:
+                if self.rect.colliderect(x.rect):
+                    self.life -= x.damage
+                    self.immunity = 120
 
 class Qix:
     def __init__(self, speed, board, damage):
-        self.speed = speed
+        randomInt1 = random.randint(0,1)
+        randomInt2 = random.randint(0,1)
+        if randomInt1 == 0:
+            self.xSpeed = speed
+        else:
+            self.xSpeed = speed * -1
+        if randomInt2 == 0:
+            self.ySpeed = speed
+        else:
+            self.ySpeed = speed * -1
         self.damage = damage
-        self.x = endNum/2
-        self.y = endNum/2
+        self.x = random.randint(startNum + (speed * 4), endNum - (speed * 4))
+        self.y = random.randint(startNum + (speed * 4), endNum - (speed * 4))
         self.location = board.curr
         self.rect = pygame.Rect(self.x, self.y, 10, 10)
         self.rect.center = (self.x, self.y)
@@ -312,49 +331,31 @@ class Qix:
         return self.damage
 
     def move(self):
-        dir = self.getDirection()
-        '''
-        0 = UP
-        1 = DOWN
-        2 = LEFT
-        3 = RIGHT'''
-        if dir == 0:
-            self.y -= self.speed
-        elif dir == 1:
-            self.y += self.speed
-        elif dir == 2:
-            self.x -= self.speed
-        elif dir == 3:
-            self.x += self.speed
+        self.checkCollision()
+        self.x += self.xSpeed
+        self.y += self.ySpeed
         self.moveHitbox()
-
-    def getDirection(self):
-        num = randrange(4)
-        return num
 
     def moveHitbox(self):
         self.rect.x = self.x
         self.rect.y = self.y
         self.rect.center = (self.x, self.y)
 
-    def checkCollision(self, dir, board):
-        current = board.curr
+    def checkCollision(self):
+        current = self.location
         firstNode = current
         while current.next is not firstNode:
-            if current.rect.collidepoint(self.rect.center):
-                if dir == 0:
-                    self.y += 35
-                    return
-                elif dir == 1:
-                    self.y -= 35
-                    return
-                elif dir == 2:
-                    self.x += 35
-                    return
-                elif dir == 3:
-                    self.x += 35
-                    return
-
+            if self.rect.colliderect(current.rect):
+                if current.orientation == UP or current.orientation == DOWN:
+                    self.xSpeed *= -1
+                elif current.orientation == LEFT or current.orientation == RIGHT:
+                    self.ySpeed *= -1
+            current = current.next
+        if self.rect.colliderect(current.rect):
+            if current.orientation == UP or current.orientation == DOWN:
+                self.xSpeed *= -1
+            elif current.orientation == LEFT or current.orientation == RIGHT:
+                self.ySpeed *= -1        
 
 class Sparx:
     def __init__(self, speed, board, damage):
@@ -419,7 +420,6 @@ class Node:
             else:
                 self.rect = pygame.Rect(self.next.x, self.next.y, self.x - self.next.x + 1, self.y - self.next.y + 1)
 
-
 def findAreaList(listNodes):
     sum1 = 0
     sum2 = 0
@@ -427,7 +427,6 @@ def findAreaList(listNodes):
         sum1 += listNodes[i].x * listNodes[i + 1].y
         sum2 += listNodes[i].y * listNodes[i + 1].x
     return (sum1 - sum2) / 2
-
 
 class Board:
     def __init__(self):
@@ -607,7 +606,8 @@ level = 1
 prevLevel = 1
 
 def restartGame():
-    global board, qix, sparxList, player, level, prevLevel
+    global board, qix, sparxList, player, level, prevLevel, gameState
+    gameState = GAME_START
     startScreen()
     board = Board()
     qix = Qix(5, board, 1)
@@ -619,19 +619,21 @@ def restartGame():
 GAME_RUNNING = 0 
 GAME_OVER = 1
 GAME_WON = 2
-gameState = 0
+GAME_START = 3
+gameState = GAME_START
 
 def startScreen():
     global start
-    while start is True:
+    global gameState
+    while gameState == GAME_START:
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
-
         keys = pygame.key.get_pressed()
         if keys[pygame.K_r]:
-            start = False
+            gameState = GAME_RUNNING
+            return 0
         screen.fill(WHITE)
         screen.blit(startScreenText, (endNum/2 -35, endNum/2 - 100))
         screen.blit(startScreenText2, (endNum/2 - 50, endNum/2))
@@ -640,15 +642,12 @@ def startScreen():
         clock.tick(15)
 
 def gameOverScreen():
-    global gameState
     for event in pygame.event.get():
         if event.type == QUIT:
             pygame.quit()
             sys.exit()
-
     keys = pygame.key.get_pressed()
     if keys[pygame.K_r]:
-        gameState = GAME_RUNNING
         restartGame()
         return 0
     screen.blit(gameOverScreen1, (endNum/2 -140, endNum/2 - 100))
@@ -658,16 +657,14 @@ def gameOverScreen():
     clock.tick(15)
     
 def victoryScreen():
-    global gameState
     for event in pygame.event.get():
         if event.type == QUIT:
             pygame.quit()
             sys.exit()
-
     keys = pygame.key.get_pressed()
     if keys[pygame.K_r]:
-        gameState = GAME_RUNNING
         restartGame()
+        return 0
     screen.fill(WHITE)
     screen.blit(victoryText1, (endNum / 2 - 100, endNum / 2 - 100))
     screen.blit(victoryText2, (endNum / 2 - 50, endNum / 2))
@@ -688,14 +685,11 @@ while running:
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
-
         if level != prevLevel:
             pygame.time.wait(5000)
             prevLevel = level
 
         keys = pygame.key.get_pressed()
-
-        direction = None
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
             player.move(LEFT, board)
         elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
@@ -709,7 +703,6 @@ while running:
 
         '''screen = pygame.Surface.copy(screen)'''
         clock.tick(30)
-        qix.move()
         screen.fill(AQUA)
         screen.blit(playerSurf, (0, 0))
         LevelText2 = font.render(str(level), True, BLACK)
@@ -724,7 +717,7 @@ while running:
         drawBoard(board)
         if player.isPush is True:
             drawPush(player)
-            check = player.checkCollision(qix, sparxList, board)
+            check = player.checkCollisionPush(qix, sparxList, board)
             if check != NONE:
                 screen.fill(AQUA)
                 if check == PASS:
@@ -752,6 +745,10 @@ while running:
                 elif check == FAIL:
                     player.resetPush(0)
                 if player.life == 0:
+                    gameState = GAME_OVER
+        else:
+            player.checkCollision(sparxList)
+            if player.life == 0:
                     gameState = GAME_OVER
         if level == prevLevel:
             for x in sparxList:
