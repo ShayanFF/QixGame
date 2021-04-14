@@ -15,7 +15,7 @@ font = pygame.font.SysFont('arial', 20)
 titleFont = pygame.font.SysFont('arial', 60)
 startNum = 10
 endNum = 750
-LabelNum = endNum/4
+LabelNum = endNum / 4
 start = True
 
 """Some placeholder colours to be used later"""
@@ -35,8 +35,9 @@ CompletionText1 = font.render('BOARD %: ', True, BLACK)
 CompletionText2 = font.render(str(temp), True, BLACK)
 gameOverScreen1 = titleFont.render('GAME OVER', True, RED)
 gameOverScreen2 = font.render('Press R to restart', True, RED)
-victoryText1 = titleFont.render('YOU WIN!', True, RED)
-victoryText2 = font.render('Press R to replay', True, RED)
+victoryText1 = titleFont.render('YOU WIN!', True, BLACK)
+victoryText2 = font.render('Press R to replay', True, BLACK)
+levelCompleteText = titleFont.render('LEVEL COMPLETE!', True, BLACK)
 
 screen.fill(AQUA)
 playerSurf = pygame.Surface((765, 800))
@@ -49,11 +50,10 @@ Replace:
 and 25 should be able to stay the same although I haven't tested it yet
 """
 
-
-newStart = endNum//2
-pygame.draw.rect(screen, BLACK, ((newStart), (newStart-5), 10, 10))
+newStart = endNum // 2
+pygame.draw.rect(screen, BLACK, ((newStart), (newStart - 5), 10, 10))
 x = newStart
-y = newStart-5
+y = newStart - 5
 speed = 5
 running = True
 direction = None
@@ -68,7 +68,8 @@ PASS = 1
 NONE = 2
 QIX = 3
 SPARX = 4
-        
+
+
 class Player:
     def __init__(self, life, speed, board):
         self.life = life
@@ -305,10 +306,11 @@ class Player:
                     self.life -= x.damage
                     self.immunity = 120
 
+
 class Qix:
     def __init__(self, speed, board, damage):
-        randomInt1 = random.randint(0,1)
-        randomInt2 = random.randint(0,1)
+        randomInt1 = random.randint(0, 1)
+        randomInt2 = random.randint(0, 1)
         if randomInt1 == 0:
             self.xSpeed = speed
         else:
@@ -355,10 +357,11 @@ class Qix:
             if current.orientation == UP or current.orientation == DOWN:
                 self.xSpeed *= -1
             elif current.orientation == LEFT or current.orientation == RIGHT:
-                self.ySpeed *= -1  
+                self.ySpeed *= -1
 
     def updateBoard(self, boardNode):
-        self.location = boardNode   
+        self.location = boardNode
+
 
 class Sparx:
     def __init__(self, speed, board, damage):
@@ -409,7 +412,7 @@ class Sparx:
             current = current.next
         if self.rect.colliderect(current.rect):
             return True
-        return False 
+        return False
 
 
 class Node:
@@ -440,6 +443,7 @@ class Node:
             else:
                 self.rect = pygame.Rect(self.next.x, self.next.y, self.x - self.next.x + 1, self.y - self.next.y + 1)
 
+
 def findAreaList(listNodes):
     sum1 = 0
     sum2 = 0
@@ -448,9 +452,11 @@ def findAreaList(listNodes):
         sum2 += listNodes[i].y * listNodes[i + 1].x
     return (sum1 - sum2) / 2
 
+
 class Board:
     def __init__(self):
-        startingNodes = [Node(startNum, endNum, RIGHT), Node(endNum, endNum, UP), Node(endNum, startNum, LEFT), Node(startNum, startNum, DOWN)]
+        startingNodes = [Node(startNum, endNum, RIGHT), Node(endNum, endNum, UP), Node(endNum, startNum, LEFT),
+                         Node(startNum, startNum, DOWN)]
         startingNodes[0].prev = startingNodes[-1]
         startingNodes[-1].prev = startingNodes[-2]
         startingNodes[0].next = startingNodes[1]
@@ -491,14 +497,14 @@ class Board:
             self.curr.next = nodes[0]
             self.curr = nodes[-1]
         else:
-            for x in range(len(nodes)-1,0,-1):
-                nodes[x].orientation = nodes[x-1].orientation * -1
+            for x in range(len(nodes) - 1, 0, -1):
+                nodes[x].orientation = nodes[x - 1].orientation * -1
             nodes[0].orientation = self.curr.orientation
             nodes[0].next = self.curr.next
             nodes[0].prev = nodes[1]
             for x in range(1, len(nodes) - 1):
-                nodes[x].prev = nodes[x+1]
-                nodes[x].next = nodes[x-1]
+                nodes[x].prev = nodes[x + 1]
+                nodes[x].next = nodes[x - 1]
             current.next = nodes[-1]
             nodes[-1].prev = current
             nodes[-1].next = nodes[-2]
@@ -519,40 +525,41 @@ class Board:
         return (sum1 - sum2) / 2
 
     def checkWin(self, percent):
-        if self.getArea() > (((100-percent) / 100) * self.startingArea):
+        if self.getArea() > (((100 - percent) / 100) * self.startingArea):
             return True
         else:
             return False
+
     def getPoint(self, nodes):
-        point = (0,0)
-        for i in range(0, len(nodes)-1):
+        point = (0, 0)
+        for i in range(0, len(nodes) - 1):
             if nodes[i].getOrientation() != nodes[i + 1].getOrientation():
                 if nodes[i].getOrientation() == UP:
-                    if nodes[i+1].getOrientation() == LEFT:
-                        point = (nodes[i+1].getx() - 1, nodes[i+1].gety() + 1)
+                    if nodes[i + 1].getOrientation() == LEFT:
+                        point = (nodes[i + 1].getx() - 1, nodes[i + 1].gety() + 1)
                         return point
-                    elif nodes[i+1].getOrientation() == RIGHT:
+                    elif nodes[i + 1].getOrientation() == RIGHT:
                         point = (nodes[i + 1].getx() + 1, nodes[i + 1].gety() + 1)
                         return point
                 elif nodes[i].getOrientation() == DOWN:
-                    if nodes[i+1].getOrientation() == LEFT:
+                    if nodes[i + 1].getOrientation() == LEFT:
                         point = (nodes[i + 1].getx() - 1, nodes[i + 1].gety() - 1)
                         return point
-                    elif nodes[i+1].getOrientation() == RIGHT:
+                    elif nodes[i + 1].getOrientation() == RIGHT:
                         point = (nodes[i + 1].getx() + 1, nodes[i + 1].gety() - 1)
                         return point
                 elif nodes[i].getOrientation() == LEFT:
-                    if nodes[i+1].getOrientation() == UP:
+                    if nodes[i + 1].getOrientation() == UP:
                         point = (nodes[i + 1].getx() + 1, nodes[i + 1].gety() - 1)
                         return point
-                    elif nodes[i+1].getOrientation() == DOWN:
+                    elif nodes[i + 1].getOrientation() == DOWN:
                         point = (nodes[i + 1].getx() + 1, nodes[i + 1].gety() + 1)
                         return point
                 elif nodes[i].getOrientation() == RIGHT:
-                    if nodes[i+1].getOrientation() == UP:
+                    if nodes[i + 1].getOrientation() == UP:
                         point = (nodes[i + 1].getx() - 1, nodes[i + 1].gety() - 1)
                         return point
-                    elif nodes[i+1].getOrientation() == DOWN:
+                    elif nodes[i + 1].getOrientation() == DOWN:
                         point = (nodes[i + 1].getx() - 1, nodes[i + 1].gety() + 1)
                         return point
         return None
@@ -581,6 +588,7 @@ class Board:
                 area.append((posX, posY - 1))
             pygame.surfarray.blit_array(playerSurf, surfArray)
 
+
 def drawBoard(board):
     global qix
     current = board.curr
@@ -593,11 +601,13 @@ def drawBoard(board):
     pygame.draw.rect(screen, BLACK, current.rect)
     qix.updateBoard(current)
 
+
 def drawObjects(player, qix, sparxLists):
     pygame.draw.rect(screen, GREEN, player.rect)
     pygame.draw.rect(screen, RED, qix.rect)
     for i in sparxLists:
         pygame.draw.rect(screen, BLACK, i.rect)
+
 
 def drawPush(player):
     for i in player.pushNodes:
@@ -608,6 +618,7 @@ def drawPush(player):
         else:
             pygame.draw.rect(screen, BLACK, (player.x, player.y, i.getx() - player.x + 1, i.gety() - player.y + 1))
 
+
 def cycleLevel(board, sparxList, level):
     if level == 5:
         sparxList.append(Sparx(sparxList[0].speed, board.prev, 1))
@@ -616,6 +627,7 @@ def cycleLevel(board, sparxList, level):
         sparxList[x] = Sparx(sparxList[x].speed, board, sparxList[x].damage)
     return sparxList
 
+
 SPEED_INC = 1
 
 percent = 50
@@ -623,9 +635,10 @@ percent = 50
 board = Board()
 qix = Qix(5, board, 1)
 sparxList = [Sparx(5, board, 1)]
-player = Player(1, 5, board)
+player = Player(5, 5, board)
 level = 1
 prevLevel = 1
+
 
 def restartGame():
     global board, qix, sparxList, player, level, prevLevel, gameState
@@ -634,15 +647,17 @@ def restartGame():
     board = Board()
     qix = Qix(5, board, 1)
     sparxList = [Sparx(5, board, 1)]
-    player = Player(1, 5, board)
+    player = Player(5, 5, board)
     level = 1
     prevLevel = 1
 
-GAME_RUNNING = 0 
+
+GAME_RUNNING = 0
 GAME_OVER = 1
 GAME_WON = 2
 GAME_START = 3
 gameState = GAME_START
+
 
 def startScreen():
     global start
@@ -657,11 +672,12 @@ def startScreen():
             gameState = GAME_RUNNING
             return 0
         screen.fill(WHITE)
-        screen.blit(startScreenText, (endNum/2 -35, endNum/2 - 100))
-        screen.blit(startScreenText2, (endNum/2 - 50, endNum/2))
+        screen.blit(startScreenText, (endNum / 2 - 35, endNum / 2 - 100))
+        screen.blit(startScreenText2, (endNum / 2 - 50, endNum / 2))
         pygame.display.update()
 
         clock.tick(15)
+
 
 def gameOverScreen():
     for event in pygame.event.get():
@@ -672,12 +688,13 @@ def gameOverScreen():
     if keys[pygame.K_r]:
         restartGame()
         return 0
-    screen.blit(gameOverScreen1, (endNum/2 -140, endNum/2 - 100))
+    screen.blit(gameOverScreen1, (endNum / 2 - 140, endNum / 2 - 100))
     screen.blit(gameOverScreen2, (endNum / 2 - 50, endNum / 2))
     pygame.display.update()
 
     clock.tick(15)
-    
+
+
 def victoryScreen():
     for event in pygame.event.get():
         if event.type == QUIT:
@@ -693,6 +710,12 @@ def victoryScreen():
     pygame.display.update()
 
     clock.tick(15)
+
+def levelCompleteScreen():
+    screen.blit(levelCompleteText, (endNum/2 -225, endNum/2 - 100))
+    pygame.display.update()
+    clock.tick(30)
+
 
 startScreen()
 
@@ -730,12 +753,12 @@ while running:
         LevelText2 = font.render(str(level), True, BLACK)
         HealthText2 = font.render(str(player.life), True, BLACK)
         CompletionText2 = font.render(str(round((board.getArea() / board.startingArea) * 100)), True, BLACK)
-        screen.blit(LevelText1, (LabelNum -40, endNum+15))
-        screen.blit(LevelText2, (LabelNum + 20, endNum+15))
-        screen.blit(HealthText1, (LabelNum*2 - 40, endNum+15))
-        screen.blit(HealthText2, (LabelNum*2 + 30, endNum+15))
-        screen.blit(CompletionText1, (LabelNum*3 - 40, endNum+15))
-        screen.blit(CompletionText2, (LabelNum*3 + 50, endNum+15))
+        screen.blit(LevelText1, (LabelNum - 40, endNum + 15))
+        screen.blit(LevelText2, (LabelNum + 20, endNum + 15))
+        screen.blit(HealthText1, (LabelNum * 2 - 40, endNum + 15))
+        screen.blit(HealthText2, (LabelNum * 2 + 30, endNum + 15))
+        screen.blit(CompletionText1, (LabelNum * 3 - 40, endNum + 15))
+        screen.blit(CompletionText2, (LabelNum * 3 + 50, endNum + 15))
         drawBoard(board)
         if player.isPush is True:
             drawPush(player)
@@ -749,6 +772,7 @@ while running:
                         drawBoard(board)
                         drawObjects(player, qix, sparxList)
                         pygame.display.update()
+                        levelCompleteScreen()
                         pygame.time.wait(3000)
                         screen.fill(AQUA)
                         pygame.display.update()
@@ -777,7 +801,7 @@ while running:
         else:
             player.checkCollision(sparxList)
             if player.life == 0:
-                    gameState = GAME_OVER
+                gameState = GAME_OVER
         if level == prevLevel:
             for x in sparxList:
                 x.moveCircle()
