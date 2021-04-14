@@ -364,23 +364,31 @@ class Qix:
         self.rect = pygame.Rect(self.x, self.y, 10, 10)
         self.rect.center = (self.x, self.y)
 
+    # Return hitbox
     def getHitbox(self):
         return self.rect
 
+    # Return damage
     def getDamage(self):
         return self.damage
 
+    # Move the Qix and check collision with board
     def move(self):
         self.checkCollision()
         self.x += self.xSpeed
         self.y += self.ySpeed
+        # Update hitbox
         self.moveHitbox()
 
+    # Move the Qix hitbox
     def moveHitbox(self):
         self.rect.x = self.x
         self.rect.y = self.y
         self.rect.center = (self.x, self.y)
 
+    # Check collision with the qix and the board
+    # If the Qix collides with top or bottom, reverse it's y speed
+    # If it collides with left or right, reverse it's x speed
     def checkCollision(self):
         current = self.location
         firstNode = current
@@ -397,11 +405,13 @@ class Qix:
             elif current.orientation == LEFT or current.orientation == RIGHT:
                 self.ySpeed *= -1
 
+    # Update the Qix board when the board changes
     def updateBoard(self, boardNode):
         self.location = boardNode
 
-
+# Sparx Class
 class Sparx:
+    # Initialize depending on if there is 1 or 2 sparx, initialize locations as well
     def __init__(self, speed, board, damage, loc):
         self.speed = speed
         self.damage = damage
@@ -416,17 +426,23 @@ class Sparx:
         self.rect = pygame.Rect(self.x, self.y, 10, 10)
         self.rect.center = (self.x, self.y)
 
+    # Return hitbox
     def getHitbox(self):
         return self.rect
 
+    # Return damage
     def getDamage(self):
         return self.damage
 
+    # Update the pygame.rect hitbox of the sparx
     def moveHitbox(self):
         self.rect.x = self.x
         self.rect.y = self.y
         self.rect.center = (self.x, self.y)
 
+    # Move the sparx in a circle
+    # Essentially just follows the circular list of nodes
+    # If it reaches a corner, it moves on to the next node
     def moveCircle(self):
         if self.x == self.location.next.x and self.y == self.location.next.y:
             self.location = self.location.next
@@ -438,14 +454,17 @@ class Sparx:
             self.x -= self.speed
         elif self.location.orientation == RIGHT:
             self.x += self.speed
+        # Update hitbox after moving
         self.moveHitbox()
 
+    # Update the location of the sparx to the node passed in the parameter
     def updateLocation(self, node):
         self.location = node
         self.x = self.location.x
         self.y = self.location.y
         self.moveHitbox()
 
+    # Check collision of board, if the sparx is not on the board it will need to be teleported back to the board
     def checkCollision(self, board):
         current = self.location
         firstNode = current
@@ -457,8 +476,11 @@ class Sparx:
             return True
         return False
 
-
+# Class Node
 class Node:
+    # Initialize
+    # Every node will have an x, y and direction
+    # This direction will be the direction of the edge following the node in the circular linked list
     def __init__(self, x, y, orientation):
         self.x = x
         self.y = y
@@ -467,18 +489,25 @@ class Node:
         self.orientation = orientation
         self.rect = None
 
+    # Return x
     def getx(self):
         return self.x
 
+    # Return y
     def gety(self):
         return self.y
 
+    # Return direction
     def getOrientation(self):
         return self.orientation
 
+    # Return hitbox (1 pixel wide)
     def getHitbox(self):
         return self.rect
 
+    # Update hitbox automatically
+    # It will do this by checking where the node after it is
+    # And assigning a pygame.rect hitbox respectively
     def updateRect(self):
         if self.next is not None:
             if self.orientation == DOWN or self.orientation == RIGHT:
@@ -486,17 +515,9 @@ class Node:
             else:
                 self.rect = pygame.Rect(self.next.x, self.next.y, self.x - self.next.x + 1, self.y - self.next.y + 1)
 
-
-def findAreaList(listNodes):
-    sum1 = 0
-    sum2 = 0
-    for i in range(len(listNodes) - 1):
-        sum1 += listNodes[i].x * listNodes[i + 1].y
-        sum2 += listNodes[i].y * listNodes[i + 1].x
-    return (sum1 - sum2) / 2
-
-
+# Board class AKA the circular linked list
 class Board:
+    # Initialize the initial board of just 4 vertices
     def __init__(self):
         startingNodes = [Node(startNum, endNum, RIGHT), Node(endNum, endNum, UP), Node(endNum, startNum, LEFT),
                          Node(startNum, startNum, DOWN)]
@@ -510,6 +531,11 @@ class Board:
         self.curr = startingNodes[0]
         self.startingArea = self.getArea()
 
+    # Function to add a push
+    # The function is assuming the push was successful as the player object would verify this first
+    # Then it will check if the push was done in reverse or not
+    # It will respectively put the nodes in and update the hitboxes of the board as well
+    # Will make sure the circular linked list stays intact and gets rid of all nodes that are unused after
     def addPush(self, nodes, nodeBefore):
         nodes.reverse()
         current = self.curr
@@ -553,6 +579,8 @@ class Board:
             nodes[-1].next = nodes[-2]
             self.curr = nodes[-1]
 
+    # Gets the area of the board
+    # Mathematical function that checks from vertice to vertice
     def getArea(self):
         current = self.curr
         firstNode = current
@@ -567,71 +595,28 @@ class Board:
             current = current.next
         return (sum1 - sum2) / 2
 
+    # Checks if the board has won
+    # Returns true if it has, false otherwise
+    # Percent parameter is used to check win condition
     def checkWin(self, percent):
         if self.getArea() > (((100 - percent) / 100) * self.startingArea):
             return True
         else:
             return False
 
-    def getPoint(self, nodes):
-        point = (0, 0)
-        for i in range(0, len(nodes) - 1):
-            if nodes[i].getOrientation() != nodes[i + 1].getOrientation():
-                if nodes[i].getOrientation() == UP:
-                    if nodes[i + 1].getOrientation() == LEFT:
-                        point = (nodes[i + 1].getx() - 1, nodes[i + 1].gety() + 1)
-                        return point
-                    elif nodes[i + 1].getOrientation() == RIGHT:
-                        point = (nodes[i + 1].getx() + 1, nodes[i + 1].gety() + 1)
-                        return point
-                elif nodes[i].getOrientation() == DOWN:
-                    if nodes[i + 1].getOrientation() == LEFT:
-                        point = (nodes[i + 1].getx() - 1, nodes[i + 1].gety() - 1)
-                        return point
-                    elif nodes[i + 1].getOrientation() == RIGHT:
-                        point = (nodes[i + 1].getx() + 1, nodes[i + 1].gety() - 1)
-                        return point
-                elif nodes[i].getOrientation() == LEFT:
-                    if nodes[i + 1].getOrientation() == UP:
-                        point = (nodes[i + 1].getx() + 1, nodes[i + 1].gety() - 1)
-                        return point
-                    elif nodes[i + 1].getOrientation() == DOWN:
-                        point = (nodes[i + 1].getx() + 1, nodes[i + 1].gety() + 1)
-                        return point
-                elif nodes[i].getOrientation() == RIGHT:
-                    if nodes[i + 1].getOrientation() == UP:
-                        point = (nodes[i + 1].getx() - 1, nodes[i + 1].gety() - 1)
-                        return point
-                    elif nodes[i + 1].getOrientation() == DOWN:
-                        point = (nodes[i + 1].getx() - 1, nodes[i + 1].gety() + 1)
-                        return point
-        return None
+# Function that calculates area of a list of nodes
+# This is used to get the area of the pushNodes the player makes to compare to the board size
+def findAreaList(listNodes):
+    sum1 = 0
+    sum2 = 0
+    for i in range(len(listNodes) - 1):
+        sum1 += listNodes[i].x * listNodes[i + 1].y
+        sum2 += listNodes[i].y * listNodes[i + 1].x
+    return (sum1 - sum2) / 2
 
-    def fillArea(self, nodes):
-        area = []
-        startPoint = self.getPoint(nodes)
-        if startPoint is not None:
-            print(startPoint)
-            surfArray = pygame.surfarray.pixels2d(playerSurf)
-            currentColour = surfArray[startPoint]
-            print(currentColour)
-            fillColour = playerSurf.map_rgb(BLACK)
-            area.append(startPoint)
-            while len(area) > 0:
-                posX, posY = area.pop()
-                try:
-                    if surfArray[posX, posY] != currentColour:
-                        continue
-                except IndexError:
-                    continue
-                surfArray[posX, posY] = fillColour
-                area.append((posX + 1, posY))
-                area.append((posX - 1, posY))
-                area.append((posX, posY + 1))
-                area.append((posX, posY - 1))
-            pygame.surfarray.blit_array(playerSurf, surfArray)
-
-
+# Draw the board object
+# The board will be updated everytime a new push is added
+# This ensures the old board isn't drawn and the new board is drawn
 def drawBoard(board):
     global qix
     current = board.curr
@@ -644,14 +629,15 @@ def drawBoard(board):
     pygame.draw.rect(screen, BLACK, current.rect)
     qix.updateBoard(current)
 
-
+# Draw all other objects in the game (player, qix, sparx)
 def drawObjects(player, qix, sparxLists):
     pygame.draw.rect(screen, GREEN, player.rect)
     pygame.draw.rect(screen, RED, qix.rect)
     for i in sparxLists:
         pygame.draw.rect(screen, BLACK, i.rect)
 
-
+# Draw the push if the player is making one
+# This will draw lines following the player
 def drawPush(player):
     for i in player.pushNodes:
         if i.getHitbox() is not None:
@@ -661,7 +647,8 @@ def drawPush(player):
         else:
             pygame.draw.rect(screen, BLACK, (player.x, player.y, i.getx() - player.x + 1, i.gety() - player.y + 1))
 
-
+# Function to cycle through the levels
+# This function will add a sparx at level 5
 def cycleLevel(board, sparxList, level):
     if level == 5:
         sparxList.append(Sparx(sparxList[0].speed, board, 1, 1))
@@ -669,17 +656,23 @@ def cycleLevel(board, sparxList, level):
         sparxList[x] = Sparx(sparxList[x].speed, board, sparxList[x].damage, x)
     return sparxList
 
+# Initialize objects
 board = Board()
 qix = Qix(5, board, 1)
 sparxList = [Sparx(5, board, 1, 0)]
 player = Player(5, 5, board)
+
+# Initialize level
 level = 1
 prevLevel = 1
-
 percent = 50
 
+# Initialize game state
 gameState = GAME_START
 
+# Function to reset the game
+# Sets all parameters to the default parameters
+# Sets game state back to the start screen
 def restartGame():
     global board, qix, sparxList, player, level, prevLevel, gameState
     gameState = GAME_START
@@ -691,6 +684,9 @@ def restartGame():
     level = 1
     prevLevel = 1
 
+# Start screen
+# Displays at the beginning of the game
+# Prompts user and gives instructions
 def startScreen():
     global start
     global gameState
@@ -714,7 +710,9 @@ def startScreen():
 
         clock.tick(15)
 
-
+# Game over screen
+# Screen that is displayed if user loses all lives
+# The user is prompted to restart
 def gameOverScreen():
     for event in pygame.event.get():
         if event.type == QUIT:
@@ -730,6 +728,9 @@ def gameOverScreen():
 
     clock.tick(15)
 
+# Victory screen
+# Shown when the player beats level 5
+# The user is prompted to restart to play again
 def victoryScreen():
     for event in pygame.event.get():
         if event.type == QUIT:
@@ -746,16 +747,19 @@ def victoryScreen():
 
     clock.tick(15)
 
+# Level complete overlay
+# Prompts the user that the current level has been beaten
 def levelCompleteScreen():
     screen.blit(levelCompleteText, (endNum/2 -225, endNum/2 - 100))
     pygame.display.update()
     clock.tick(30)
 
-
+# Initialize the start screen
 startScreen()
 
+# Game loop
 while running:
-    # draw the board
+    # Display or do certain actions based on the game state
     if gameState == GAME_OVER:
         gameOverScreen()
     elif gameState == GAME_WON:
@@ -765,10 +769,12 @@ while running:
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
+        # If the level is a new level, pause to give the user time to adjust
         if level != prevLevel:
             pygame.time.wait(2000)
             prevLevel = level
 
+        # Check for user input and do action respectively
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
             player.move(LEFT, board)
@@ -781,6 +787,8 @@ while running:
         elif keys[pygame.K_SPACE]:
             player.makePush()
 
+        # Drawings
+        # Will draw all visuals on the screen and update texts as needed
         clock.tick(30)
         screen.fill(AQUA)
         screen.blit(playerSurf, (0, 0))
@@ -794,6 +802,13 @@ while running:
         screen.blit(CompletionText1, (LabelNum * 3 - 40, endNum + 15))
         screen.blit(CompletionText2, (LabelNum * 3 + 50, endNum + 15))
         drawBoard(board)
+
+        # If the player is in a push the game does a series of checks
+        # First checks for collisions during a push
+        # If the collisions return something other than none, will do action respectively
+        # If the push is successful, the game checks for win
+        # If the current level is won, then the next level is presented
+        # If the game is won, then the end screen is presented
         if player.isPush is True:
             drawPush(player)
             check = player.checkCollisionPush(qix, sparxList, board)
@@ -830,8 +845,11 @@ while running:
                     player.resetPush(sparxList[0].getDamage())
                 elif check == FAIL:
                     player.resetPush(0)
+                # If lives are zero, game is over
                 if player.life == 0:
                     gameState = GAME_OVER
+        # Check sparx collisions
+        # If lives are zero, game is over
         else:
             if player.immunity == 0:
                 player.checkCollision(sparxList)
@@ -839,9 +857,11 @@ while running:
                 player.checkImmunity()
             if player.life == 0:
                 gameState = GAME_OVER
+        # If the game is not over, move the Sparx and Qix objects
         if level == prevLevel and gameState != GAME_WON:
             for x in sparxList:
                 x.moveCircle()
             qix.move()
+        # Draw the objects and update the display
         drawObjects(player, qix, sparxList)
         pygame.display.update()
