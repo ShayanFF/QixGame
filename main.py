@@ -708,7 +708,7 @@ while running:
                 pygame.quit()
                 sys.exit()
         if level != prevLevel:
-            pygame.time.wait(5000)
+            pygame.time.wait(2000)
             prevLevel = level
 
         keys = pygame.key.get_pressed()
@@ -749,28 +749,22 @@ while running:
                         drawBoard(board)
                         drawObjects(player, qix, sparxList)
                         pygame.display.update()
-                        pygame.time.wait(5000)
+                        pygame.time.wait(3000)
                         screen.fill(AQUA)
                         pygame.display.update()
                         level += 1
                         board = Board()
                         sparxList = cycleLevel(board, sparxList, level)
-                        qix = Qix(qix.speed + SPEED_INC, board, qix.damage)
+                        qix = Qix(qix.xSpeed + SPEED_INC, board, qix.damage)
                         player = Player(player.life, player.speed, board)
                         drawBoard(board)
                         percent += 5
                     else:
                         drawBoard(board)
                         if sparxList[0].checkCollision(board) is False:
-                            if sparxList[0].location.next is not player.pushNodes[1]:
-                                sparxList[0].updateLocation(player.pushNodes[-1].prev)
-                            else:
-                                sparxList[0].updateLocation(player.pushNodes[-1].next)
+                            sparxList[0].updateLocation(player.pushNodes[0])
                         if level == 5 and sparxList[1].checkCollision(board) is False:
-                            if sparxList[1].location.next is not player.pushNodes[1]:
-                                sparxList[1].updateLocation(player.pushNodes[-1].prev)
-                            else:
-                                sparxList[1].updateLocation(player.pushNodes[-1].next)
+                            sparxList[1].updateLocation(player.pushNodes[0].next)
                         player.endPush()
                 elif check == QIX:
                     player.resetPush(qix.getDamage())
