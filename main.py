@@ -253,8 +253,8 @@ class Player:
             self.moveHitbox()
 
     def endPush(self):
-        self.isPush = False
         self.pushNodes = []
+        self.isPush = False
 
     def checkCollisionPush(self, qix, sparxList, board):
         if self.rect.colliderect(qix.rect):
@@ -355,7 +355,10 @@ class Qix:
             if current.orientation == UP or current.orientation == DOWN:
                 self.xSpeed *= -1
             elif current.orientation == LEFT or current.orientation == RIGHT:
-                self.ySpeed *= -1        
+                self.ySpeed *= -1  
+
+    def updateBoard(self, boardNode):
+        self.location = boardNode   
 
 class Sparx:
     def __init__(self, speed, board, damage):
@@ -390,6 +393,23 @@ class Sparx:
         elif self.location.orientation == RIGHT:
             self.x += self.speed
         self.moveHitbox()
+
+    def updateLocation(self, node):
+        self.location = node
+        self.x = self.location.x
+        self.y = self.location.y
+        self.moveHitbox()
+
+    def checkCollision(self, board):
+        current = self.location
+        firstNode = current
+        while current.next is not firstNode:
+            if self.rect.colliderect(current.rect):
+                return True
+            current = current.next
+        if self.rect.colliderect(current.rect):
+            return True
+        return False 
 
 
 class Node:
@@ -562,6 +582,7 @@ class Board:
             pygame.surfarray.blit_array(playerSurf, surfArray)
 
 def drawBoard(board):
+    global qix
     current = board.curr
     firstNode = current
     while current.next is not firstNode:
@@ -570,6 +591,7 @@ def drawBoard(board):
         current = current.next
     current.updateRect()
     pygame.draw.rect(screen, BLACK, current.rect)
+    qix.updateBoard(current)
 
 def drawObjects(player, qix, sparxLists):
     pygame.draw.rect(screen, GREEN, player.rect)
@@ -721,7 +743,6 @@ while running:
             if check != NONE:
                 screen.fill(AQUA)
                 if check == PASS:
-                    player.endPush()
                     if board.checkWin(percent) is True and level == 5:
                         gameState = GAME_WON
                     elif board.checkWin(percent) is True:
@@ -738,6 +759,19 @@ while running:
                         player = Player(player.life, player.speed, board)
                         drawBoard(board)
                         percent += 5
+                    else:
+                        drawBoard(board)
+                        if sparxList[0].checkCollision(board) is False:
+                            if sparxList[0].location.next is not player.pushNodes[1]:
+                                sparxList[0].updateLocation(player.pushNodes[-1].prev)
+                            else:
+                                sparxList[0].updateLocation(player.pushNodes[-1].next)
+                        if level == 5 and sparxList[1].checkCollision(board) is False:
+                            if sparxList[1].location.next is not player.pushNodes[1]:
+                                sparxList[1].updateLocation(player.pushNodes[-1].prev)
+                            else:
+                                sparxList[1].updateLocation(player.pushNodes[-1].next)
+                        player.endPush()
                 elif check == QIX:
                     player.resetPush(qix.getDamage())
                 elif check == SPARX:
