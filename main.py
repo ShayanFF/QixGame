@@ -43,7 +43,6 @@ instruc1 = instrucFont.render('WASD / Arrow Keys to Move', True, BLACK)
 instruc2 = instrucFont.render('Space to Start Push', True, BLACK)
 instruc3 = instrucFont.render('Qix is Red, Sparx is Blue, You are Green', True, BLACK)
 instruc4 = instrucFont.render('5 Levels to Beat', True, BLACK)
-
 screen.fill(AQUA)
 playerSurf = pygame.Surface((765, 800))
 playerSurf.fill(AQUA)
@@ -63,19 +62,28 @@ speed = 5
 running = True
 direction = None
 
+# Constants to store direction of nodes
 UP = 1
 DOWN = -1
 LEFT = 2
 RIGHT = -2
 
+# Constants to store conditions of push collision checks
 FAIL = 0
 PASS = 1
 NONE = 2
 QIX = 3
 SPARX = 4
 
+# Constants to store state of the game
+GAME_RUNNING = 0
+GAME_OVER = 1
+GAME_WON = 2
+GAME_START = 3
 
+# Player class
 class Player:
+    # Initialize the player object and it's hitbox
     def __init__(self, life, speed, board):
         self.life = life
         self.speed = speed
@@ -89,7 +97,12 @@ class Player:
         self.pushNodes = []
         self.immunity = 0
 
+    # Move function, allows player to move around the board based off user input
     def move(self, direction, board):
+        
+        # If the player is currently in an active Push, then it will move accordinly on the push
+        # This means the player cannot move backwards
+        # Everytime the player turns, the push will store a new node to eventually be added to the board if the push succeeds
         if self.isPush is True:
             if self.pushNodes[-1].orientation == direction:
                 if direction == UP:
@@ -116,6 +129,10 @@ class Player:
                 self.pushNodes[-1].prev = self.pushNodes[-2]
                 self.pushNodes[-2].next = self.pushNodes[-1]
                 self.pushNodes[-2].updateRect()
+
+        # If the player is not in an active push, then the move function will go through a bunch of checks
+        # These checks will make sure that the player cannot pass the current node and move off of the board
+        # The player will essentially be limited to moving on the circular list of nodes
         elif self.atCorner is False:
             if direction == LEFT and (self.location.orientation == LEFT or self.location.orientation == RIGHT):
                 if self.location.orientation == LEFT and self.x - self.speed <= self.location.next.x:
@@ -135,30 +152,27 @@ class Player:
                     self.atCorner = True
                 else:
                     self.x += self.speed
-
             elif direction == UP and (self.location.orientation == UP or self.location.orientation == DOWN):
                 if self.location.orientation == UP and self.y - self.speed <= self.location.next.y:
                     self.y = self.location.next.y
                     self.atCorner = True
-
                 elif self.location.orientation == DOWN and self.y - self.speed <= self.location.y:
                     self.y = self.location.y
                     self.atCorner = True
-
                 else:
                     self.y -= self.speed
-
             elif direction == DOWN and (self.location.orientation == UP or self.location.orientation == DOWN):
                 if self.location.orientation == UP and self.y + self.speed >= self.location.y:
                     self.y = self.location.y
                     self.atCorner = True
-
                 elif self.location.orientation == DOWN and self.y + self.speed >= self.location.next.y:
                     self.y = self.location.next.y
                     self.atCorner = True
-
                 else:
                     self.y += self.speed
+        
+        # If the player is at a corner (at a node), then the player must move to either the next node or stay on the current node
+        # This part of the move function will ensure that the player is moved to the appropriate nodef
         else:
             if direction == UP:
                 if self.location.next.x == self.x and self.location.next.orientation == UP:
@@ -231,16 +245,22 @@ class Player:
                 elif self.location.next.x == self.x and self.location.next.y == self.y and self.location.orientation == LEFT:
                     self.x += self.speed
                     self.atCorner = False
+        # Update the pygame.rect hitbox of the player after it moves
         self.moveHitbox()
 
+    # Function that updates the pygame.rect hitbox of the player to it's current location
     def moveHitbox(self):
         self.rect.x = self.x
         self.rect.y = self.y
         self.rect.center = (self.x, self.y)
 
+    # Function that returns player hitbox
     def getHitbox(self):
         return self.rect
 
+    # Function that starts push if called
+    # First the function checks if the player is not in active push or at a corner (preconditions)
+    # Then the function will move the player and start adding nodes to store for if the push succeeds
     def makePush(self):
         if self.isPush is not True and self.atCorner is not True:
             self.isPush = True
@@ -258,10 +278,18 @@ class Player:
                 self.x += self.speed
             self.moveHitbox()
 
+    # Ends the current push and empties the list of nodes
     def endPush(self):
         self.pushNodes = []
         self.isPush = False
 
+    # Checks collision of player if they are in a push in this order
+    # 1. First check if the Qix is colliding with the player
+    # 2. Next check if the sparx is colliding with the start of the push
+    # 3. After check if the player is colliding with their own push (like in snake, trying to eat itself)
+    # 4. Then check if the Qix is hitting those same lines
+    # If all of these are not true, then it will after check if the player is intersecting with the board
+    # If they are, the push is finished and the board is updated
     def checkCollisionPush(self, qix, sparxList, board):
         if self.rect.colliderect(qix.rect):
             return QIX
@@ -291,10 +319,12 @@ class Player:
                 return PASS
         return NONE
 
+    # This immunity function is to ensure the player doesn't instantly die when they are hit by a sparx
     def checkImmunity(self):
         if self.immunity > 0:
             self.immunity -= 1
 
+    # Resets the push and deals damage if needed
     def resetPush(self, damage):
         self.x = self.pushNodes[0].getx()
         self.y = self.pushNodes[0].gety()
@@ -302,17 +332,20 @@ class Player:
         self.isPush = False
         self.pushNodes = []
         self.life -= damage
-        self.immunity = 120
+        self.immunity = 60
 
+    # Checks collision between player and sparx
+    # Deals damage if the collision check is true
     def checkCollision(self, sparxList):
         if self.immunity == 0:
             for x in sparxList:
                 if self.rect.colliderect(x.rect):
                     self.life -= x.damage
-                    self.immunity = 120
+                    self.immunity = 60
 
-
+# Qix Class
 class Qix:
+    # The Qix is initialized to be starting at a random spot in the board, and head in a random direction
     def __init__(self, speed, board, damage):
         randomInt1 = random.randint(0, 1)
         randomInt2 = random.randint(0, 1)
@@ -369,12 +402,17 @@ class Qix:
 
 
 class Sparx:
-    def __init__(self, speed, board, damage):
+    def __init__(self, speed, board, damage, loc):
         self.speed = speed
         self.damage = damage
-        self.x = 250
-        self.y = 10
-        self.location = board.curr.next.next
+        if loc == 0:
+            self.location = board.curr.next.next
+            self.x = endNum / 2
+            self.y = startNum
+        else:
+            self.location = board.curr.next
+            self.x = endNum
+            self.y = endNum / 2
         self.rect = pygame.Rect(self.x, self.y, 10, 10)
         self.rect.center = (self.x, self.y)
 
@@ -626,24 +664,21 @@ def drawPush(player):
 
 def cycleLevel(board, sparxList, level):
     if level == 5:
-        sparxList.append(Sparx(sparxList[0].speed, board.prev, 1))
-        return sparxList
+        sparxList.append(Sparx(sparxList[0].speed, board, 1, 1))
     for x in range(len(sparxList)):
-        sparxList[x] = Sparx(sparxList[x].speed, board, sparxList[x].damage)
+        sparxList[x] = Sparx(sparxList[x].speed, board, sparxList[x].damage, x)
     return sparxList
-
-
-SPEED_INC = 1
-
-percent = 50
 
 board = Board()
 qix = Qix(5, board, 1)
-sparxList = [Sparx(5, board, 1)]
+sparxList = [Sparx(5, board, 1, 0)]
 player = Player(5, 5, board)
 level = 1
 prevLevel = 1
 
+percent = 50
+
+gameState = GAME_START
 
 def restartGame():
     global board, qix, sparxList, player, level, prevLevel, gameState
@@ -651,18 +686,10 @@ def restartGame():
     startScreen()
     board = Board()
     qix = Qix(5, board, 1)
-    sparxList = [Sparx(5, board, 1)]
+    sparxList = [Sparx(5, board, 1, 0)]
     player = Player(5, 5, board)
     level = 1
     prevLevel = 1
-
-
-GAME_RUNNING = 0
-GAME_OVER = 1
-GAME_WON = 2
-GAME_START = 3
-gameState = GAME_START
-
 
 def startScreen():
     global start
@@ -702,7 +729,6 @@ def gameOverScreen():
     pygame.display.update()
 
     clock.tick(15)
-
 
 def victoryScreen():
     for event in pygame.event.get():
@@ -755,13 +781,12 @@ while running:
         elif keys[pygame.K_SPACE]:
             player.makePush()
 
-        '''screen = pygame.Surface.copy(screen)'''
         clock.tick(30)
         screen.fill(AQUA)
         screen.blit(playerSurf, (0, 0))
         LevelText2 = font.render(str(level), True, BLACK)
         HealthText2 = font.render(str(player.life), True, BLACK)
-        CompletionText2 = font.render(str(round((board.getArea() / board.startingArea) * 100)), True, BLACK)
+        CompletionText2 = font.render(str(100 - round((board.getArea() / board.startingArea) * 100)) + "/" + str(percent), True, BLACK)
         screen.blit(LevelText1, (LabelNum - 40, endNum + 15))
         screen.blit(LevelText2, (LabelNum + 20, endNum + 15))
         screen.blit(HealthText1, (LabelNum * 2 - 40, endNum + 15))
@@ -788,7 +813,7 @@ while running:
                         level += 1
                         board = Board()
                         sparxList = cycleLevel(board, sparxList, level)
-                        qix = Qix(qix.xSpeed + SPEED_INC, board, qix.damage)
+                        qix = Qix(qix.xSpeed + 1, board, qix.damage)
                         player = Player(player.life, player.speed, board)
                         drawBoard(board)
                         percent += 5
@@ -808,10 +833,13 @@ while running:
                 if player.life == 0:
                     gameState = GAME_OVER
         else:
-            player.checkCollision(sparxList)
+            if player.immunity == 0:
+                player.checkCollision(sparxList)
+            else:
+                player.checkImmunity()
             if player.life == 0:
                 gameState = GAME_OVER
-        if level == prevLevel:
+        if level == prevLevel and gameState != GAME_WON:
             for x in sparxList:
                 x.moveCircle()
             qix.move()
