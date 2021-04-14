@@ -13,6 +13,7 @@ pygame.display.set_caption('Qix')
 clock = pygame.time.Clock()
 font = pygame.font.SysFont('arial', 20)
 titleFont = pygame.font.SysFont('arial', 60)
+instrucFont = pygame.font.SysFont('arial', 16)
 startNum = 10
 endNum = 750
 LabelNum = endNum / 4
@@ -38,6 +39,10 @@ gameOverScreen2 = font.render('Press R to restart', True, RED)
 victoryText1 = titleFont.render('YOU WIN!', True, BLACK)
 victoryText2 = font.render('Press R to replay', True, BLACK)
 levelCompleteText = titleFont.render('LEVEL COMPLETE!', True, BLACK)
+instruc1 = instrucFont.render('WASD / Arrow Keys to Move', True, BLACK)
+instruc2 = instrucFont.render('Space to Start Push', True, BLACK)
+instruc3 = instrucFont.render('Qix is Red, Sparx is Blue, You are Green', True, BLACK)
+instruc4 = instrucFont.render('5 Levels to Beat', True, BLACK)
 
 screen.fill(AQUA)
 playerSurf = pygame.Surface((765, 800))
@@ -674,6 +679,10 @@ def startScreen():
         screen.fill(WHITE)
         screen.blit(startScreenText, (endNum / 2 - 35, endNum / 2 - 100))
         screen.blit(startScreenText2, (endNum / 2 - 50, endNum / 2))
+        screen.blit(instruc1, (endNum / 2 - 75, endNum / 2 + 50))
+        screen.blit(instruc2, (endNum / 2 - 50, endNum / 2 + 100))
+        screen.blit(instruc3, (endNum / 2 - 105, endNum / 2 + 150))
+        screen.blit(instruc4, (endNum / 2 - 40, endNum / 2 + 200))
         pygame.display.update()
 
         clock.tick(15)
